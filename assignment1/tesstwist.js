@@ -40,9 +40,9 @@ function onTwistSliderChange(evt){
 function refresh(){
 	
 	var vertices = [
-		vec2(-1, -1),
-		vec2( 0,  1),
-		vec2( 1, -1)	
+		vec2(-0.5, -0.5),
+		vec2( 0,  0.5),
+		vec2( 0.5, -0.5)	
 	];
 	points = [];
 	divideTriangle(vertices[0], vertices[1], vertices[2], 
