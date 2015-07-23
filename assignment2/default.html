@@ -5,13 +5,15 @@
 
 attribute vec4 vPosition;
 attribute vec4 vColor;
+attribute float vPointSize;
+/* uniform float pointSize; */
 
 varying vec4 fColor;
 
 void main() {
 	gl_Position = vPosition;
 	fColor = vColor;
-	gl_PointSize = 10.0;
+	gl_PointSize = vPointSize;
 }
 </script>
 <script id="fragment-shader" type="x-shader/x-fragment">
@@ -28,25 +30,24 @@ void main() {
 <script type="text/javascript" src="../Common/initShaders.js"></script>
 <script type="text/javascript" src="../Common/MV.js"></script>
 <script type="text/javascript" src="linepainting.js"></script>
-
+<script type="text/javascript" src="../lib/jscolor/jscolor.js"></script>
+<script type="text/javascript" src="../lib/jszip.min.js"></script>
+<script type="text/javascript" src="../lib/FileSaver.js"></script>
+<!--<script type="text/javascript" src="../lib/colorpicker-1.0/cbox.js"></script>-->
 </head>
 <body>
 <div>
-<canvas id="gl-canvas" width="512"" height="512">
+Color: <input type="text" class="color" value="0f0d52" size="5" id="colorPicker">
+Alpha: <input type="range" id="opacityPicker" min=0.1 max=1 value=1 step=0.1><input id="opacityText" type="text" size="5" readonly="readonly" value="1"/>
+Thickness: <input type="range" id="thicknessPicker" min=1 max=10 value=5 step=1><input id="thicknessText" type="text" size="5" readonly="readonly" value="5" />
+</div>
+<div>
+<canvas id="gl-canvas" width="800"" height="800">
 Oops ... your browser doesn't support the HTML5 canvas element
 </canvas>
 </div>
 <div>
-<select id = "mymenu" size = "7">
-    <option value = "0">Black</option>
-    <option value = "1">Red</option>
-    <option value = "2">Yellow</option>
-    <option value = "3">Green</option>
-    <option value = "4">Blue</option>
-    <option value = "5">Magenta</option>
-    <option value = "6">Cyan</option>
-</select>
-
+<button type="button" id="saveButton">Save</button>
 </div>
 
 </html>
