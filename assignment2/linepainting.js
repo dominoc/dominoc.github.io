@@ -2,7 +2,7 @@
 var DEBUG = false;
 var canvas;
 var gl;
-var maxNumTriangles = 100000;
+var maxNumTriangles = 200000;
 var maxNumVertices = 3 * maxNumTriangles;
 var points = [];
 var pixelResolution = 1.0;
@@ -31,9 +31,11 @@ function init(){
 	canvas.addEventListener('mousedown', onCanvasMouseDown);
 	canvas.addEventListener('mouseup', onCanvasMouseUp);
 	canvas.addEventListener('mousemove', onCanvasMouseMove);
+	canvas.addEventListener('mouseout', onCanvasMouseOut);
 	$('opacityPicker').onchange = onOpacityPickerChange;
 	$('thicknessPicker').onchange = onThicknessPickerChange;
 	$('saveButton').onclick = onSaveButtonClick;
+	$('clearButton').onclick = onClearButtonClick;
 	
 	
 	gl.viewport(0, 0, canvas.width, canvas.height);
@@ -84,6 +86,13 @@ function onThicknessPickerChange(evt){
 		console.log(evt.target.value);
 	}
 }
+function onClearButtonClick(evt){
+	gl.clearColor(0.8, 0.8, 0.8, 1.0);
+	index = 0;
+	points = [];
+	mode = PaintMode.NONE;
+	render();
+}
 function onSaveButtonClick(evt){
 	var image = canvas.toDataURL("image/png");	//.replace("image/png","image/octet-stream");
 	var imgData = image.replace('data:image/png;base64,','');
@@ -94,7 +103,6 @@ function onSaveButtonClick(evt){
 	if (DEBUG){
 		console.log(image);
 	}
-	// window.location.href = image;
 }
 function onCanvasMouseDown(evt){
 	var point = transMouseEvent2Window(evt);
@@ -149,6 +157,16 @@ function onCanvasMouseUp(evt){
 		console.log('mouse up ', cpoint, index);
 	mode = PaintMode.NONE;
 	points = [];
+}
+function onCanvasMouseOut(evt){
+	var point = transMouseEvent2Window(evt);
+	var cpoint = transWindow2Clip(point);
+	if (DEBUG)
+		console.log('mouse out', cpoint);
+	if (PaintMode.LINE){
+		mode = PaintMode.NONE;
+		points = [];
+	}
 }
 function transMouseEvent2Window(evt){
 	var rect = evt.target.getBoundingClientRect();
