@@ -1,0 +1,67 @@
+
+<html>
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+attribute vec4 vPosition;
+uniform vec2 u_shift;
+uniform float u_ptSize;
+
+
+
+void
+main()
+{
+
+    mat4 shiftMat = mat4(1.0);
+    shiftMat[3][0] = u_shift.x;
+    shiftMat[3][1] = u_shift.y;
+    gl_Position = shiftMat * vPosition;
+    gl_PointSize = u_ptSize;
+
+}
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+
+precision mediump float;
+uniform vec4 u_color;
+void
+main()
+{
+    gl_FragColor = u_color;
+}
+</script>
+
+<script type="text/javascript" src="../Common/webgl-utils.js"></script>
+<script type="text/javascript" src="../Common/initShaders.js"></script>
+<script type="text/javascript" src="../Common/MV.js"></script>
+<script type="text/javascript" src="lixi.js"></script>
+
+
+<div>
+    <canvas id="gl-canvas" width="720" height="480">
+    Oops ... your browser doesn't support the HTML5 canvas element
+    </canvas>
+</div>
+<div>
+    <select id = "mymenu" size = "7">
+        <option value = "0">Black</option>
+        <option value = "1">Red</option>
+        <option value = "2">Yellow</option>
+        <option value = "3">Green</option>
+        <option value = "4">Blue</option>
+        <option value = "5">Magenta</option>
+        <option value = "6">Cyan</option>
+    </select>
+    <input id = "widthSlider" type="range"
+           min = "1" max = "20" step = '1' value = '3' > width  </input> <b id = "width"> 3 </b>
+</div>
+
+<div>
+<button id = "undo"  >undo</button> <button id = "redo"  >redo</button>  <input type="checkbox" id = "pick"> pick and drag </input>
+</div>
+
+
+
+</body>
+</html>
