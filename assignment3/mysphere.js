@@ -1,10 +1,11 @@
 "use strict";
 var canvas, gl;
-var radius = 1;
-var latitudeBands = 30;
-var longitudeBands = 30;
+var MAX_POINTS = Math.pow(2,16);
+var GEOMETRIES = [];
+var gShaders;
+
 var vertexPositionData = [];
-var normalData = [];
+
 var $ = function(id){
 	return document.getElementById(id);
 };
@@ -13,43 +14,123 @@ window.onload = init;
 
 function init() {
 	
-	var shader = new Shader();
-	var sphere = new Sphere();
-	sphere.move();
-	
-	console.log(vertexPositionData);
-}
-function GL(){
-	this.gl;
-	init();
-	function init(){
-		
+	canvas = $('gl-canvas');
+	gl = WebGLUtils.setupWebGL(canvas);
+	if (!gl) { 
+		alert("WebGL is not available");
+		return;
 	}
+	gl.viewport(0,0,canvas.width,canvas.height);
+	gl.clearColor(0.8, 0.8, 0.8, 1.0);
+	
+	gShaders = new Shaders(gl, MAX_POINTS);
+
+	canvas.addEventListener('mousedown', onCanvasMouseDown);
+
+
+	
+		
+	render();
+	// var sphere = new Sphere();
+	// sphere.move();
 }
-function Shader (gl) {
-	this.uPointSize;
+function onCanvasMouseDown(evt){
+	var point = transMouse2Window(evt);
+	var cpoint = transWindow2Clip(point);
+	var v = vec2(cpoint.x, cpoint.y);
+	
+	var rgb = $('colorPicker').color.rgb;
+	var color = [];
+	var opacity = 1.0;
+	color.push(rgb[0], rgb[1], rgb[2], opacity);
+	
+	var triangle = new Triangle(0, v, color);
+	
+	GEOMETRIES.push(triangle);
+	
+	console.log(triangle);
+	
+	render();
+}
+function transMouse2Window(evt){
+	var bndClientRect = evt.target.getBoundingClientRect();
+	var point = {};
+	point.x = (evt.clientX - bndClientRect.left);
+	point.y = (evt.clientY - bndClientRect.top);
+	return point;
+}
+function transWindow2Clip(point){
+	var cpoint = {};
+	cpoint.x = 2 * point.x / canvas.width - 1;
+	cpoint.y = -1 + 2 * (canvas.height - point.y)/canvas.height;
+	return cpoint;
+}
+function render(){
+	gl.clear(gl.COLOR_BUFFER_BIT);
+	GEOMETRIES.forEach(function(geometry){
+		//gShaders.setColor(geometry.color);
+		gl.drawArrays(gl.TRIANGLES, geometry.start, geometry.length);
+	});
+	window.requestAnimationFrame(render);
+}
+var Shaders = Shaders || {};
+Shaders = function (gl, maxPoints) {
+	var me = this;
 	this.uTranslation;
 	this.uColor;
 	this.uScale;
 	this.bufferId;
 	this.vPosition;
 	this.dataLength = 0;
+	this.gl = gl;
+	this.maxPoints = maxPoints;
 	init();
 	function init() {
-		var program = initShaders(gl, "vertex-shader", "fragment-shader");
-		gl.useProgram(program);
+		var program = initShaders(me.gl, "vertex-shader", "fragment-shader");	
+		me.gl.useProgram(program);
+
+		me.uColor = me.gl.getUniformLocation(program, "uColor");
 		
-		this.uPointSize = gl.getUniformLocation(program, "uPointSize");
-		this.uTranslation = gl.getUniformLocation(program, "uTranslation");
-		this.uColor = gl.getUniformLocation(program, "uColor");
-		this.uScale = gl.getUniformLocation(program, "uScale");
+		me.bufferId = me.gl.createBuffer();
+		me.gl.bindBuffer (me.gl.ARRAY_BUFFER, me.bufferId);
+		me.gl.bufferData ( me.gl.ARRAY_BUFFER, 2*4*me.maxPoints, 
+			me.gl.STATIC_DRAW);
 		
-		this.bufferId = gl.createBuffer();
-		gl.bindBuffer (gl.ARRAY_BUFFER, this.bufferId);
+		me.vPosition = me.gl.getAttribLocation(program, "vPosition");
+		var numComponents = 2;
+		me.gl.vertexAttribPointer(me.vPosition, numComponents, 
+			me.gl.FLOAT, false, 0, 0);
+		me.gl.enableVertexAttribArray(me.vPosition);
+	}
+}
+Shaders.prototype.setColor = function(color){
+	this.gl.uniform4f(this.uColor, color[0],color[1],color[2],color[3]);
+}
+Shaders.prototype.fillVertexData = function (offset, data, length){
+	this.gl.bindBuffer(this.ARRAY_BUFFER, this.bufferId);
+	var offsetBytes = offset * 2 * 4;
+	this.gl.bufferSubData(this.gl.ARRAY_BUFFER, offsetBytes, data);
+	this.dataLength += length;
+}
+Shaders.prototype.getDataLength = function() {
+	return this.dataLength;
+}
+function Triangle(start, origin, color){
+	var me = this;
+	this.start = start;
+	this.length = length;
+	this.color = color;
+	this.points = [];
+	this.origin = origin;
+	init();
+	function init(){
+		me.points = [
+			vec2(-0.1 + origin.x, -0.1 + origin.y),
+			vec2(0 + origin.x, 0.1 + origin.y),
+			vec2(0.1 + origin.x, -0.1 + origin.y)
+		];
 		
-		this.vPosition = gl.getAttribLocation(program, "vPosition");
-		gl.vertexAttribPointer(this.vPosition, 3, gl.FLOAT, false, 0, 0);
-		gl.enableVertexAttribArray(this.vPosition);
+		me.length = me.points.length;
 	}
 }
 function Sphere(){
@@ -80,27 +161,3 @@ function Sphere(){
 Sphere.prototype.move = function(){
 	console.log('move', this);
 };
-function sphere(){
-	for (var latNumber = 0; latNumber <= latitudeBands; latNumber++){
-		var theta = latNumber * Math.PI / latitudeBands;
-		var sinTheta = Math.sin(theta);
-		var cosTheta = Math.cos(theta);
-		for (var lngNumber = 0; lngNumber <= longitudeBands; lngNumber++){
-			var phi = lngNumber * 2 * Math.PI/longitudeBands;
-			var sinPhi = Math.sin(phi);
-			var cosPhi = Math.cos(phi);
-			
-			var x = cosPhi * sinTheta;
-			var y = cosTheta;
-			var z = sinPhi * sinTheta;
-						
-			normalData.push(x);
-			normalData.push(y);
-			normalData.push(z);
-			
-			vertexPositionData.push(radius * x);
-			vertexPositionData.push(radius * y);
-			vertexPositionData.push(radius * z);
-		}
-	}
-}
