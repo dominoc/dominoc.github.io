@@ -48,7 +48,7 @@ function onCanvasMouseDown(evt){
 	
 	GEOMETRIES.push(triangle);
 	
-	console.log(triangle);
+	// console.log(GEOMETRIES);
 	
 	render();
 }
@@ -68,7 +68,8 @@ function transWindow2Clip(point){
 function render(){
 	gl.clear(gl.COLOR_BUFFER_BIT);
 	GEOMETRIES.forEach(function(geometry){
-		//gShaders.setColor(geometry.color);
+		gShaders.setColor(geometry.color);
+		console.log(geometry.start, geometry);
 		gl.drawArrays(gl.TRIANGLES, geometry.start, geometry.length);
 	});
 	window.requestAnimationFrame(render);
@@ -107,7 +108,7 @@ Shaders.prototype.setColor = function(color){
 	this.gl.uniform4f(this.uColor, color[0],color[1],color[2],color[3]);
 }
 Shaders.prototype.fillVertexData = function (offset, data, length){
-	this.gl.bindBuffer(this.ARRAY_BUFFER, this.bufferId);
+	// this.gl.bindBuffer(this.ARRAY_BUFFER, this.bufferId);
 	var offsetBytes = offset * 2 * 4;
 	this.gl.bufferSubData(this.gl.ARRAY_BUFFER, offsetBytes, data);
 	this.dataLength += length;
@@ -119,17 +120,19 @@ function Triangle(start, origin, color){
 	var me = this;
 	this.start = start;
 	this.length = length;
-	this.color = color;
+	this.color = flatten(color);
 	this.points = [];
 	this.origin = origin;
 	init();
 	function init(){
 		me.points = [
-			vec2(-0.1 + origin.x, -0.1 + origin.y),
-			vec2(0 + origin.x, 0.1 + origin.y),
-			vec2(0.1 + origin.x, -0.1 + origin.y)
+			vec2(-0.5 + origin.x, -0.5 + origin.y),
+			vec2(0 + origin.x, 0.5 + origin.y),
+			vec2(0.5 + origin.x, -0.5 + origin.y)
 		];
-		
+		me.start = gShaders.getDataLength();
+		gShaders.fillVertexData(gShaders.getDataLength, flatten(me.points),
+			me.points.length);
 		me.length = me.points.length;
 	}
 }
