@@ -1,5 +1,15 @@
 "use strict";
+var DEBUG = true;
 var canvas, gl;
+var DrawMode = { 
+	NONE : 0,
+	SELECT : 1,
+	DRAW_TRIANGLE : 2,
+	DRAW_SPHERE : 3,
+	DRAW_CONE : 4,
+	DRAW_CYLINDER : 5
+};
+var MODE = DrawMode.DRAW_TRIANGLE;
 var MAX_POINTS = Math.pow(2,16);
 var GEOMETRIES = [];
 var gShaders;
@@ -15,7 +25,8 @@ window.onload = init;
 function init() {
 	
 	canvas = $('gl-canvas');
-	gl = WebGLUtils.setupWebGL(canvas);
+	var options = {alpha: false, premultipliedAlpha: false, preserveDrawingBuffer: true};
+	gl = WebGLUtils.setupWebGL(canvas, options);
 	if (!gl) { 
 		alert("WebGL is not available");
 		return;
@@ -25,8 +36,10 @@ function init() {
 	
 	gShaders = new Shaders(gl, MAX_POINTS);
 
+	$('modeCombo').onchange = onModeComboChange;
+	$('modeCombo').onkeydown = onModeComboChange;
 	canvas.addEventListener('mousedown', onCanvasMouseDown);
-
+	canvas.addEventListener('mousemove', onCanvasMouseMove);
 
 	
 		
@@ -34,23 +47,104 @@ function init() {
 	// var sphere = new Sphere();
 	// sphere.move();
 }
-function onCanvasMouseDown(evt){
-	var point = transMouse2Window(evt);
-	var cpoint = transWindow2Clip(point);
-	var v = vec2(cpoint.x, cpoint.y);
+function onModeComboChange(evt){
+	var choice = $('modeCombo').value;
+	MODE = Number(choice);
+}
+function selectGeometry(point){
+	var foundGeometry = undefined;
+	var dx = 4;
+	var dy = 4;
+	var candidates = [];
+	var buffer = new Uint8Array(4*16);
+		
+	gl.clearColor(0,0,0,1);
+	render(true);
 	
+	gl.readPixels(point.x - dx/2, point.y + dy/2, dx, dy, gl.RGBA, 
+		gl.UNSIGNED_BYTE, buffer);
+		
+	for (var i=0; i < 64; i+=4){
+		if (buffer[i] > 0) {
+			var id = String(buffer[i]);
+			if (candidates.indexOf(id)==-1)
+				candidates.push(id);
+		}
+	}
+	gl.clearColor(0.8, 0.8, 0.8, 1.0);
+	render();
+	if (candidates.length == 0) {
+		//Nothing found
+	}
+	else {
+		var candidateId = Number(candidates[0]);
+		GEOMETRIES.forEach(function(geometry){
+			if (geometry.geometryId === candidateId){
+				foundGeometry = geometry;
+				return;
+			}
+		})		
+	}
+	return foundGeometry;
+}
+function componentToHex(c) {
+    var hex = c.toString(16);
+    return hex.length == 1 ? "0" + hex : hex;
+}
+function rgbToHex(r, g, b) {
+    return componentToHex(r) + componentToHex(g) + componentToHex(b);
+}
+function setPickerColor(rgba){
+	var picker = $('colorPicker');
+	var r = Math.ceil(rgba[0]*255);
+	var g = Math.ceil(rgba[1]*255);
+	var b = Math.ceil(rgba[2]*255);
+	var color = String(rgbToHex(r,g,b)).toUpperCase();
+	picker.value = color;
+	picker.color.fromString(color);
+}
+function getPickerColor(){
 	var rgb = $('colorPicker').color.rgb;
 	var color = [];
 	var opacity = 1.0;
 	color.push(rgb[0], rgb[1], rgb[2], opacity);
+	return color;
+}
+function onCanvasMouseDown(evt){
+	var point = transMouse2Window(evt);
+	var clipPoint = transWindow2Clip(point);
+	var cartPoint = transMouse2Cartesian(evt);
 	
-	var triangle = new Triangle(0, v, color);
+	var color = getPickerColor();
+
+	var geometryId = GEOMETRIES.length+1;
+	if (geometryId>255){
+		alert('Max id 255 reached');
+		return;
+	}
 	
-	GEOMETRIES.push(triangle);
-	
-	// console.log(GEOMETRIES);
-	
+	if (MODE === DrawMode.DRAW_TRIANGLE){
+		var triangle = new Triangle(geometryId, clipPoint, color);
+		GEOMETRIES.push(triangle);
+	}
+	else if (MODE === DrawMode.DRAW_SPHERE){
+		var sphere = new Sphere(geometryId, clipPoint, color);
+		GEOMETRIES.push(sphere);
+	}
+	else if (MODE === DrawMode.SELECT) {
+		var geometry = selectGeometry(cartPoint);
+		if (geometry != undefined) {
+			setPickerColor(geometry.color);
+		}
+	}
+
 	render();
+}
+function onCanvasMouseMove(evt){
+	var point = transMouse2Window(evt);
+	var cpoint = transWindow2Clip(point);
+
+	render();	
 }
 function transMouse2Window(evt){
 	var bndClientRect = evt.target.getBoundingClientRect();
@@ -65,14 +159,39 @@ function transWindow2Clip(point){
 	cpoint.y = -1 + 2 * (canvas.height - point.y)/canvas.height;
 	return cpoint;
 }
-function render(){
+function transMouse2Cartesian(evt){
+	var bndClientRect = evt.target.getBoundingClientRect();
+	var point = {};
+	point.x = (evt.clientX - bndClientRect.left);
+	point.y = (bndClientRect.bottom - evt.clientY);
+	return point;
+}
+function render(offline){
+	
+	offline = (offline) ? offline : false;
+	
 	gl.clear(gl.COLOR_BUFFER_BIT);
+
 	GEOMETRIES.forEach(function(geometry){
-		gShaders.setColor(geometry.color);
-		console.log(geometry.start, geometry);
-		gl.drawArrays(gl.TRIANGLES, geometry.start, geometry.length);
+		if (offline === false){
+			gShaders.setColor(geometry.color);
+			if (geometry instanceof Triangle){
+				gl.drawArrays(gl.TRIANGLES, geometry.start, geometry.length);			
+			}
+			else if (geometry instanceof Sphere){
+				gl.drawArrays(gl.TRIANGLES, geometry.start, geometry.length);
+			}		
+		}
+		else {
+			var color = [geometry.geometryId/255,0,0,1];
+			gShaders.setColor(color);
+			if (geometry instanceof Triangle){
+				gl.drawArrays(gl.TRIANGLES, geometry.start, geometry.length);
+			}
+		}
+
 	});
-	window.requestAnimationFrame(render);
+	// window.requestAnimationFrame(render);
 }
 var Shaders = Shaders || {};
 Shaders = function (gl, maxPoints) {
@@ -91,14 +210,15 @@ Shaders = function (gl, maxPoints) {
 		me.gl.useProgram(program);
 
 		me.uColor = me.gl.getUniformLocation(program, "uColor");
+		me.uTranslation = me.gl.getUniformLocation(program, "uTranslation");
 		
 		me.bufferId = me.gl.createBuffer();
 		me.gl.bindBuffer (me.gl.ARRAY_BUFFER, me.bufferId);
-		me.gl.bufferData ( me.gl.ARRAY_BUFFER, 2*4*me.maxPoints, 
+		me.gl.bufferData ( me.gl.ARRAY_BUFFER, 3*4*me.maxPoints, 
 			me.gl.STATIC_DRAW);
 		
 		me.vPosition = me.gl.getAttribLocation(program, "vPosition");
-		var numComponents = 2;
+		var numComponents = 3;
 		me.gl.vertexAttribPointer(me.vPosition, numComponents, 
 			me.gl.FLOAT, false, 0, 0);
 		me.gl.enableVertexAttribArray(me.vPosition);
@@ -107,58 +227,106 @@ Shaders = function (gl, maxPoints) {
 Shaders.prototype.setColor = function(color){
 	this.gl.uniform4f(this.uColor, color[0],color[1],color[2],color[3]);
 }
-Shaders.prototype.fillVertexData = function (offset, data, length){
-	// this.gl.bindBuffer(this.ARRAY_BUFFER, this.bufferId);
-	var offsetBytes = offset * 2 * 4;
+Shaders.prototype.setTranslation = function(dxdydz){
+	this.gl.uniform3f(this.uTranslation, dxdydz[0], dxdydz[1], dxdydz[2] );
+}
+Shaders.prototype.fillVertexData = function (data, offset, length){
+	this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.bufferId);
+	var offsetBytes = offset * 3 * 4;
 	this.gl.bufferSubData(this.gl.ARRAY_BUFFER, offsetBytes, data);
 	this.dataLength += length;
 }
 Shaders.prototype.getDataLength = function() {
 	return this.dataLength;
 }
-function Triangle(start, origin, color){
+function Triangle(id, origin, color){
 	var me = this;
-	this.start = start;
-	this.length = length;
-	this.color = flatten(color);
+	this.geometryId = Number(id);
+	this.start = 0;
+	this.length;
+	this.color = color;
 	this.points = [];
+	this.translation = [0,0,0];
 	this.origin = origin;
 	init();
 	function init(){
 		me.points = [
-			vec2(-0.5 + origin.x, -0.5 + origin.y),
-			vec2(0 + origin.x, 0.5 + origin.y),
-			vec2(0.5 + origin.x, -0.5 + origin.y)
+			vec3(-0.1 + origin.x, -0.1 + origin.y, 0),
+			vec3(0 + origin.x, 0.1 + origin.y, 0),
+			vec3(0.1 + origin.x, -0.1 + origin.y, 0)
 		];
+
 		me.start = gShaders.getDataLength();
-		gShaders.fillVertexData(gShaders.getDataLength, flatten(me.points),
+		gShaders.fillVertexData(flatten(me.points), gShaders.getDataLength(), 
 			me.points.length);
 		me.length = me.points.length;
+		if (DEBUG)
+			console.log(me);
 	}
 }
-function Sphere(){
+Triangle.prototype.move = function(translation){
+	console.log(this.points);
+}
+function Sphere(id, origin, color){
+	var me = this;
+	this.geometryId = Number(id);
+	this.start = 0;
+	this.length;
+	this.color = color;
+	this.points = [];
+	this.translation = [0,0,0];
+	this.origin = origin;
 	var mMaxLatBands = 10;
 	var mMaxLngBands = 10;
-	var mRadius = 1;
+	var mRadius = 0.3;
 	this.radius = mRadius;
+	init();
 	function init() {
-		console.log('sphere init');
+		var points = [];
 		for (var latBand = 0; latBand <= mMaxLatBands; latBand++){
 			var theta = latBand * Math.PI / mMaxLatBands;
 			var sinTheta = Math.sin(theta);
 			var cosTheta = Math.cos(theta);
 			for (var lngBand = 0; lngBand <= mMaxLngBands; lngBand++){
-				var phi = lngBand * 2 * Math.PI/lngBand;
+				var phi = lngBand * 2 * Math.PI/ mMaxLngBands;
 				var sinPhi = Math.sin(phi);
 				var cosPhi = Math.cos(phi);
 				
 				var x = cosPhi * sinTheta;
 				var y = cosTheta;
 				var z = sinPhi * sinTheta;
-				
-				
+								
+				var point = vec3(
+					mRadius * x + me.origin.x, 
+					mRadius * y + me.origin.y, 
+					mRadius * z);
+				console.log(x,y,z,mRadius,me.origin,point);
+				points.push(point);
 			}
 		}
+
+		var pointIndexes = [];
+		for (var latBand = 0; latBand < mMaxLatBands; latBand++)
+			for (var lngBand = 0; lngBand < mMaxLngBands; lngBand++){
+				var first = (latBand * (mMaxLngBands + 1)) + lngBand;
+				var second = first + mMaxLngBands + 1;
+				pointIndexes.push(first);
+				pointIndexes.push(second);
+				pointIndexes.push(first+1);
+				pointIndexes.push(second);
+				pointIndexes.push(second+1);
+				pointIndexes.push(first+1);
+			}
+		for (var i=0; i< pointIndexes.length; i++){
+			me.points.push(points[pointIndexes[i]]);
+		}
+		me.start = gShaders.getDataLength();
+		gShaders.fillVertexData(flatten(me.points), gShaders.getDataLength(),
+			me.points.length);
+		me.length = me.points.length;
+				
+		if (DEBUG)
+			console.log(me);
 	}
 }
 Sphere.prototype.move = function(){
