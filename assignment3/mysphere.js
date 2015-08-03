@@ -170,7 +170,7 @@ function render(offline){
 	
 	offline = (offline) ? offline : false;
 	
-	gl.clear(gl.COLOR_BUFFER_BIT);
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 	GEOMETRIES.forEach(function(geometry){
 		if (offline === false){
@@ -179,7 +179,10 @@ function render(offline){
 				gl.drawArrays(gl.TRIANGLES, geometry.start, geometry.length);			
 			}
 			else if (geometry instanceof Sphere){
+				// gShaders.setColor(geometry.color);
 				gl.drawArrays(gl.TRIANGLES, geometry.start, geometry.length);
+				gShaders.setColor([0,0,0,1]);
+				gl.drawArrays(gl.LINE_LOOP, geometry.start, geometry.length);
 			}		
 		}
 		else {
@@ -331,4 +334,10 @@ function Sphere(id, origin, color){
 }
 Sphere.prototype.move = function(){
 	console.log('move', this);
-};
+}
+function Cone (id,origin,color){
+	
+}
+function Cylinder (id, origin, color){
+	
+}
