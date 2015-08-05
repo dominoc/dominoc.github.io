@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<style>
+		body {
+			font-family: Verdana,sans-serif;
+		}
+		#main {
+			float: left;
+			width: 600px;			
+		}
+		#sidebar {
+			float: right;
+		}
+		
+	</style>
+<script id="vertex-shader" type="x-shader/x-vertex">
+
+attribute vec4 vPosition;
+
+uniform vec3 theta;
+uniform vec3 uTranslation;
+uniform vec3 uScale;
+uniform vec3 uRotation;
+
+void main(){
+	vec3 angles = radians(uRotation);
+	vec3 c = cos(angles);
+	vec3 s = sin(angles);
+	
+	mat4 rx = mat4 (
+		1, 0, 0, 0,
+		0, c.x, s.x, 0,
+		0, -s.x, c.x, 0.,
+		0, 0, 0, 1
+	);
+	
+	mat4 ry = mat4 (
+		c.y, 0, -s.y, 0,
+		0, 1, 0, 0,
+		s.y, 0, c.y, 0,
+		0, 0, 0, 1
+	);
+	
+	mat4 rz = mat4 (
+		c.z, s.z, 0, 0,
+		-s.z, c.z, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1
+	);
+	mat4 translation = mat4 (
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		uTranslation.x, uTranslation.y, uTranslation.z, 1
+	);
+	mat4 scale = mat4 (
+		uScale.x, 0, 0, 0,
+		0, uScale.x, 0, 0,
+		0, 0, uScale.x, 0,
+		0, 0, 0, 1
+	);
+	gl_Position = translation * scale * rz * ry * rx * vPosition;
+
+}
+</script>
+<script id="fragment-shader" type="x-shader/x-fragment">
+precision mediump float;
+varying vec4 fColor;
+uniform vec4 uColor;
+void main () {
+	gl_FragColor = uColor;
+}
+</script>
+<script type="text/javascript" src="../Common/webgl-utils.js"></script>
+<script type="text/javascript" src="../Common/InitShaders.js"></script>
+<script type="text/javascript" src="../Common/MV.js"></script>
+<script type="text/javascript" src="cad3d.js"></script>
+<script type="text/javascript" src="../lib/jscolor/jscolor.js"></script>
+<script type="text/javascript" src="../lib/jszip.min.js"></script>
+<script type="text/javascript" src="../lib/FileSaver.js"></script>
+</head>
+<body>
+<div>
+<select id="modeCombo">
+	<!--<option value="1">Info</option>-->
+	<option value="2" selected="selected">Draw triangle</option>
+	<option value="7">Draw circle</option>
+	<option value="3">Draw sphere</option>
+	<option value="4">Draw cone</option>
+	<option value="5">Draw cylinder</option>
+	<option value="8">Draw pyramid</option>
+	<option value="10">Draw cube</option>
+	<option value="9">Edit</option>
+	<option value="6">Move</option>
+</select>
+<label id="statusLabel">Ready</label>
+</div>
+<div id="main">
+<canvas id="gl-canvas" width="600"" height="600">
+Oops ... your browser doesn't support the HTML5 canvas element
+</canvas>
+</div>
+<div id="sidebar">
+	<div>
+		<textarea readonly id="infoTextArea" cols="30" rows="10">
+		</textarea>
+	</div>
+	<div>
+		Fill color: <input type="text" class="color" value="0f0d52" size="6" id="colorPicker"><br/>
+		X Rotation<input type="range" id="xRotPicker" value=0 min=-360 max=360 step=1/><label id="labelXRot">0</label><br/>
+		Y Rotation<input type="range" id="yRotPicker" value=0 min=-360 max=360 step=1/><label id="labelYRot">0</label><br/>
+		Z Rotation<input type="range" id="zRotPicker" value=0 min=-360 max=360 step=1/><label id="labelZRot">0</label><br/>
+		Scale<input type="range" id="scalePicker" value=10 min=1 max=100 step=1/><label id="labelScale">1</label><br/>
+	</div>
+	<div>
+		<hr/>
+		<button type="button" id="saveButton">Save</button>
+		<button type="button" id="clearButton">Clear</button>		
+	</div>
+
+</div>
+
+</html>
