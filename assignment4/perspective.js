@@ -32,8 +32,8 @@ var vertexColors = [
 
 
 var near = 0.3;
-var far = 3.0;
-var radius = 4.0;
+var far = 5;
+var radius = 4.2;
 var theta  = 45 * Math.PI/180.0;
 var phi    = 45 * Math.PI/180.0;
 var dr = 5.0 * Math.PI/180.0;

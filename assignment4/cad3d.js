@@ -49,6 +49,8 @@ function init() {
 	
 	gCamera = new Camera();
 	gShaders = new Shaders(gl, MAX_POINTS);
+	gShaders.setCamera(gCamera);
+	
 
 	$('colorPicker').onchange = onColorPickerChange;
 	$('scalePicker').onchange = onScalePickerChange;
@@ -512,6 +514,15 @@ Shaders = function (gl, maxPoints) {
 		
 	}
 }
+Shaders.prototype.setCamera = function (camera){
+	var mvMatrix = camera.mvMatrix;
+	var pMatrix = camera.pMatrix;
+	if (DEBUG){
+		console.log(mvMatrix, pMatrix);
+	}
+	gl.uniformMatrix4fv(this.uModelView, false, flatten(mvMatrix));
+	gl.uniformMatrix4fv(this.uProjection, false, flatten(pMatrix));
+}
 Shaders.prototype.setRotation = function(rotation){
 	this.gl.uniform3f(this.uRotation, rotation[0], rotation[1], rotation[2]);
 }
@@ -555,10 +566,16 @@ function Camera(){
 	function init(){
 		me.mvMatrix = me.move(me.radius, 
 			me.theta * 180/Math.PI, me.phi * 180/Math.PI);
+		me.pMatrix = me.lense(me.fovy, me.aspect, me.near, me.far);
 	}
 }
-Camera.prototype.lense = function(fov, aspect, near, far){
-	
+Camera.prototype.lense = function(fovy, aspect, near, far){
+	this.fovy = fovy;
+	this.aspect = aspect;
+	this.near = near;
+	this.far = far;
+	this.pMatrix = perspective(fovy, aspect, near, far);
+	return this.pMatrix;
 }
 Camera.prototype.move = function(radius, lonDeg, latDeg){
 	this.theta = lonDeg * Math.PI/180.0;
@@ -568,6 +585,7 @@ Camera.prototype.move = function(radius, lonDeg, latDeg){
 					this.radius*Math.sin(this.theta) * Math.sin(this.phi),
 					this.radius*Math.cos(this.theta));
 	this.mvMatrix = lookAt(eye, this.at, this.up);
+	return this.mvMatrix;
 }
 function Triangle(id, origin, color){
 	var me = this;
