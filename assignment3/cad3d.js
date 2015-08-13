@@ -1,5 +1,5 @@
 "use strict";
-var DEBUG = true;
+var DEBUG = false;
 var canvas, gl;
 var DrawMode = { 
 	NONE : 0,
@@ -67,9 +67,10 @@ function init() {
 }
 function onClearButtonClick(evt){
 	gl.clearColor(0.8, 0.8, 0.8, 1.0);
-	index = 0;
-	points = [];
-	mode = PaintMode.NONE;
+	gActiveGeometry = undefined;
+	GEOMETRIES = [];
+	MODE = DrawMode.DRAW_TRIANGLE;
+	gShaders.dataLength = 0;
 	render();
 }
 function onSaveButtonClick(evt){
@@ -163,7 +164,7 @@ function onModeComboChange(evt){
 		status.innerHTML = "Click on the canvas to place a pyramid";
 	}
 	else if (MODE === DrawMode.EDIT){
-		status.innerHTML = "Click on a geometry to edit";
+		status.innerHTML = "Click on a geometry to edit. Then change properties.";
 	}
 	else if (MODE === DrawMode.DRAW_CUBE){
 		status.innerHTML = "Click on the canvas to place a cube";
@@ -456,16 +457,15 @@ function render(offline){
 		gl.drawArrays(gl.TRIANGLES, geometry.start, geometry.length);
 
 		if (offline === false){
-			gShaders.setColor(COLORS.WIREFRAME);
-			gl.drawArrays(gl.LINE_LOOP, geometry.start, geometry.length);						
+			if (gActiveGeometry === geometry){
+				gShaders.setColor(COLORS.HIGHLIGHT);
+			}
+			else {
+				gShaders.setColor(COLORS.WIREFRAME);
+			}					
+			gl.drawArrays(gl.LINE_LOOP, geometry.start, geometry.length);
 		}
 	});
-	if (MODE === DrawMode.MOVE){
-		gShaders.setColor(COLORS.HIGHLIGHT);
-		// console.log("hilite", gActiveGeometry);
-		if (gActiveGeometry)
-			gl.drawArrays(gl.LINE_LOOP, gActiveGeometry.start, gActiveGeometry.length);			
-	}
 
 	// window.requestAnimationFrame(render);
 }
@@ -823,9 +823,9 @@ function Cylinder (id,origin,color,sides,desc){
 			me.points.push(a, b, c);
 		}
 		me.points.push(
-			vec3(0, 0, 0),
-			vec3(vertices[0].x, 0, vertices[0].y),
-			vec3(vertices[vertices.length-1].x, 0, vertices[vertices.length-1].y)
+			vec3(0, mHeight, 0),
+			vec3(vertices[0].x, mHeight, vertices[0].y),
+			vec3(vertices[vertices.length-1].x, mHeight, vertices[vertices.length-1].y)
 		);
 
 		//sides		
@@ -840,10 +840,10 @@ function Cylinder (id,origin,color,sides,desc){
 		me.points.push(
 			vec3(vertices[vertices.length-1].x, 0, vertices[vertices.length-1].y),
 			vec3(vertices[vertices.length-1].x, mHeight, vertices[vertices.length-1].y),
-			vec3(vertices[0].x,mHeight, vertices[0].y)
+			vec3(vertices[0].x, 0, vertices[0].y)
 		);
 		me.points.push(
-			vec3(vertices[vertices.length-1].x, 0, vertices[vertices.length-1].y),
+			vec3(vertices[vertices.length-1].x, mHeight, vertices[vertices.length-1].y),
 			vec3(vertices[0].x,mHeight, vertices[0].y),
 			vec3(vertices[0].x, 0, vertices[0].y)
 		);
