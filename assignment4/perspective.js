@@ -1,7 +1,17 @@
 "use strict";
 
+
+var uView;
+var uProjection;
+var uTranslation;
+var uRotation;
+var uScale;
+
+
+
 var canvas;
 var gl;
+
 
 var NumVertices  = 36;
 
@@ -85,7 +95,7 @@ window.onload = function init() {
 
     aspect =  canvas.width/canvas.height;
 
-    gl.clearColor( 1.0, 1.0, 1.0, 1.0 );
+    gl.clearColor( 0.8, 0.8, 0.8, 1.0 );
 
     gl.enable(gl.DEPTH_TEST);
 
@@ -97,6 +107,15 @@ window.onload = function init() {
     gl.useProgram( program );
 
     colorCube();
+
+
+/////////////
+    uTranslation = gl.getUniformLocation(program, "uTranslation");
+    uScale = gl.getUniformLocation(program, "uScale");
+    uRotation = gl.getUniformLocation(program, "uRotation");
+    uView = gl.getUniformLocation(program, "uView");
+    uProjection = gl.getUniformLocation(program, "uProjection");
+/////////////
 
     var cBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer );
@@ -139,6 +158,12 @@ var render = function(){
         radius*Math.sin(theta)*Math.sin(phi), radius*Math.cos(theta));
     mvMatrix = lookAt(eye, at , up);
     pMatrix = perspective(fovy, aspect, near, far);
+
+
+/////////////////////////
+
+/////////////////////////
+
 
     gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
     gl.uniformMatrix4fv( projection, false, flatten(pMatrix) );
