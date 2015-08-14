@@ -455,6 +455,7 @@ function render(offline){
 			var color = [geometry.geometryId/255,0,0,1];
 			gShaders.setColor(color);
 		}
+		//gShaders.setCamera(gCamera);
 		gShaders.setRotation(geometry.rotation);
 		gShaders.setTranslation(geometry.translation);
 		gShaders.setScale(geometry.scale);
@@ -476,7 +477,7 @@ function render(offline){
 var Shaders = Shaders || {};
 Shaders = function (gl, maxPoints) {
 	var me = this;
-	this.uModelView;
+	this.uView;
 	this.uProjection;
 	this.uTranslation;
 	this.uRotation;
@@ -509,18 +510,18 @@ Shaders = function (gl, maxPoints) {
 			me.gl.FLOAT, false, 0, 0);
 		me.gl.enableVertexAttribArray(me.vPosition);
 		
-		me.uModelView = me.gl.getUniformLocation(program, "uModelView");
+		me.uView = me.gl.getUniformLocation(program, "uView");
 		me.uProjection = me.gl.getUniformLocation(program, "uProjection");
 		
 	}
 }
 Shaders.prototype.setCamera = function (camera){
-	var mvMatrix = camera.mvMatrix;
+	var vMatrix = camera.vMatrix;
 	var pMatrix = camera.pMatrix;
 	if (DEBUG){
-		console.log(mvMatrix, pMatrix);
+		console.log(vMatrix, pMatrix);
 	}
-	gl.uniformMatrix4fv(this.uModelView, false, flatten(mvMatrix));
+	gl.uniformMatrix4fv(this.uView, false, flatten(vMatrix));
 	gl.uniformMatrix4fv(this.uProjection, false, flatten(pMatrix));
 }
 Shaders.prototype.setRotation = function(rotation){
@@ -555,7 +556,7 @@ function Camera(){
 	this.far = 3.0;
 	this.radius = 4.0;
 	
-	this.mvMatrix;
+	this.vMatrix;
 	this.pMatrix;
 
 	this.at = vec3(0,0,0);
@@ -564,7 +565,7 @@ function Camera(){
 	init();
 	
 	function init(){
-		me.mvMatrix = me.move(me.radius, 
+		me.vMatrix = me.move(me.radius, 
 			me.theta * 180/Math.PI, me.phi * 180/Math.PI);
 		me.pMatrix = me.lense(me.fovy, me.aspect, me.near, me.far);
 	}
@@ -584,8 +585,8 @@ Camera.prototype.move = function(radius, lonDeg, latDeg){
 	var eye = vec3(	this.radius*Math.sin(this.theta) * Math.cos(this.phi),
 					this.radius*Math.sin(this.theta) * Math.sin(this.phi),
 					this.radius*Math.cos(this.theta));
-	this.mvMatrix = lookAt(eye, this.at, this.up);
-	return this.mvMatrix;
+	this.vMatrix = lookAt(eye, this.at, this.up);
+	return this.vMatrix;
 }
 function Triangle(id, origin, color){
 	var me = this;
@@ -697,6 +698,24 @@ Sphere.prototype.setTranslation = function(translation){
 }
 Sphere.prototype.setRotation = function(rotation){
 	this.rotation = rotation;
+}
+function WidgetAxes () {
+	var me = this;
+	this.desc = "WidgetAxes";
+	this.start = 0;
+	this.length;
+	this.points = [];
+	init();
+	function init(){
+	}
+	function quad(a, b, c, d) {
+		 pointsArray.push(vertices[a]);
+		 pointsArray.push(vertices[b]);
+		 pointsArray.push(vertices[c]);
+		 pointsArray.push(vertices[a]);
+		 pointsArray.push(vertices[c]);
+		 pointsArray.push(vertices[d]);
+	}	
 }
 function Circle (id,origin,color){
 	var me = this;
