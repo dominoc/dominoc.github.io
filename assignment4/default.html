@@ -62,7 +62,7 @@ void main(){
 		0, 0, uScale.x, 0,
 		0, 0, 0, 1
 	);
-	gl_Position = translation * scale * rz * ry * rx * vPosition;
+	gl_Position = uProjection * uView * translation * scale * rx * ry * rz * vPosition;
 
 }
 </script>
@@ -114,6 +114,10 @@ Oops ... your browser doesn't support the HTML5 canvas element
 		Y Rotation<input type="range" id="yRotPicker" value=0 min=-360 max=360 step=1/><label id="labelYRot">0</label><br/>
 		Z Rotation<input type="range" id="zRotPicker" value=0 min=-360 max=360 step=1/><label id="labelZRot">0</label><br/>
 		Scale<input type="range" id="scalePicker" value=10 min=1 max=100 step=1/><label id="labelScale">1</label><br/>
+	</div>
+	<div>
+		Near clip: <input type="range" id="nearClipPicker" value=0.3 min =-10 max=10 step=1/><label id="labelNearClip">0.3</label><br/>
+		Far clip: <input type="range" id="farClipPicker" value=1 min =-10 max=10 step=1/><label id="labelFarClip">1.0</label><br/>
 	</div>
 	<div>
 		<hr/>

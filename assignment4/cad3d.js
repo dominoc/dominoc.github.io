@@ -18,11 +18,15 @@ var MODE = DrawMode.DRAW_TRIANGLE;
 var COLORS = {
 	CANVAS : [0.8, 0.8, 0.8, 1.0],
 	BLACK : [0, 0, 0, 1],
+	RED : [1, 0, 0, 1],
+	GREEN : [0, 1, 0, 1],
+	BLUE : [0, 0, 1, 1],
 	WIREFRAME : [0, 0, 0, 1],
 	HIGHLIGHT : [0, 1, 0, 1]
 }
 var MAX_POINTS = Math.pow(2,16);
 var GEOMETRIES = [];
+var WIDGETS = [];
 var gShaders;
 var gCamera;
 var gActiveGeometry = undefined;
@@ -51,12 +55,15 @@ function init() {
 	gShaders = new Shaders(gl, MAX_POINTS);
 	gShaders.setCamera(gCamera);
 	
+	displayXYZReference();
 
 	$('colorPicker').onchange = onColorPickerChange;
 	$('scalePicker').onchange = onScalePickerChange;
 	$('xRotPicker').onchange = onXRotPickerChange;
 	$('yRotPicker').onchange = onYRotPickerChange;
 	$('zRotPicker').onchange = onZRotPickerChange;
+	$('nearClipPicker').onchange = onNearClipPickerChange;
+	$('farClipPicker').onchange = onFarClipPickerChange;
 	$('modeCombo').onchange = onModeComboChange;
 	$('modeCombo').onkeydown = onModeComboChange;
 	canvas.addEventListener('mousedown', onCanvasMouseDown);
@@ -68,6 +75,22 @@ function init() {
 	$('clearButton').onclick = onClearButtonClick;
 	
 	render();
+}
+function onNearClipPickerChange(evt){
+	var label = $('labelNearClip');
+	label.innerHTML = String($('nearClipPicker').value);
+	var near = Number(getPickerValue('nearClipPicker', 0.3));
+	var pMatrix = gCamera.lense(gCamera.fovy, gCamera.aspect, near, gCamera.far);
+	gShaders.setCamera(gCamera);
+	render();
+}
+function onFarClipPickerChange(evt){
+	var label = $('labelFarClip');
+	label.innerHTML = String($('farClipPicker').value);
+	var far = Number(getPickerValue('farClipPicker', 1.0));
+	var pMatrix = gCamera.lense(gCamera.fovy, gCamera.aspect, gCamera.near, far);
+	gShaders.setCamera(gCamera);
+	render();	
 }
 function onClearButtonClick(evt){
 	gl.clearColor(0.8, 0.8, 0.8, 1.0);
@@ -176,6 +199,17 @@ function onModeComboChange(evt){
 	else if (MODE === DrawMode.MOVE){
 		status.innerHTML = 'Press down/drag/roll wheel on a geometry to move in 3D space';
 	}
+}
+function displayXYZReference(){
+	var xRefLine = new Line(-1, [0,0,0], COLORS.RED);
+	var yRefLine = new Line(-2, [0,0,0], COLORS.GREEN);
+	var zRefLine = new Line(-3, [0,0,0], COLORS.BLUE);
+	
+	xRefLine.setRotation([0,0,0]);
+	yRefLine.setRotation([0,0,90]);
+	zRefLine.setRotation([0,90,0]);
+	
+	WIDGETS.push(xRefLine, yRefLine, zRefLine);
 }
 function selectGeometry(point){
 	var foundGeometry = undefined;
@@ -447,6 +481,15 @@ function render(offline){
 	
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+	WIDGETS.forEach (function(widget){
+		// console.log('widget', widget);
+		gShaders.setColor(widget.color);
+		gShaders.setRotation(widget.rotation);
+		gShaders.setTranslation(widget.translation);
+		gShaders.setScale(widget.scale);
+		gl.drawArrays(gl.LINE_LOOP, widget.start, widget.length);
+	});
+	
 	GEOMETRIES.forEach(function(geometry){
 		if (offline === false){
 			gShaders.setColor(geometry.color);
@@ -699,23 +742,41 @@ Sphere.prototype.setTranslation = function(translation){
 Sphere.prototype.setRotation = function(rotation){
 	this.rotation = rotation;
 }
-function WidgetAxes () {
+function Line (id,origin,color) {
 	var me = this;
-	this.desc = "WidgetAxes";
+	this.desc = "Line";
+	this.geometryId = Number(id);
 	this.start = 0;
 	this.length;
+	this.color = color;
 	this.points = [];
+	this.translation = [0,0,0];
+	this.rotation = [0,0,0];
+	this.scale = [1,1,1];
 	init();
 	function init(){
-	}
-	function quad(a, b, c, d) {
-		 pointsArray.push(vertices[a]);
-		 pointsArray.push(vertices[b]);
-		 pointsArray.push(vertices[c]);
-		 pointsArray.push(vertices[a]);
-		 pointsArray.push(vertices[c]);
-		 pointsArray.push(vertices[d]);
-	}	
+		me.points = [
+			vec3(-10,0,0),
+			vec3(0,0,0),
+			vec3(10,0,0)
+		];
+		me.translation = origin;
+		me.start = gShaders.getDataLength();
+		gShaders.fillVertexData(flatten(me.points), gShaders.getDataLength(),
+			me.points.length);
+		me.length = me.points.length;
+		if (DEBUG)
+			console.log(me);
+	} 
+}
+Line.prototype.setScale = function(scale){
+	this.scale = scale;
+}
+Line.prototype.setTranslation = function(translation){
+	this.translation = translation;
+}
+Line.prototype.setRotation = function(rotation){
+	this.rotation = rotation;
 }
 function Circle (id,origin,color){
 	var me = this;

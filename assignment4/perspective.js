@@ -13,7 +13,7 @@ var canvas;
 var gl;
 
 
-var NumVertices  = 36;
+var NumVertices  = 6;   // 36;
 
 var pointsArray = [];
 var colorsArray = [];
@@ -82,8 +82,27 @@ function colorCube()
     quad( 4, 5, 6, 7 );
     quad( 5, 4, 0, 1 );
 }
-
-
+/////////////////////////////
+var gridVertices = [
+    vec4(-10,0,0,1), // x
+    vec4(10,0,0,1),
+    vec4(0,-10,0,1), // y
+    vec4(0,10,0,1),
+    vec4(0,0,-10,1), // z
+    vec4(0,0,10,1)
+];
+function grid() {
+    gridLine( 0, 1);
+    gridLine( 2, 3);
+    gridLine( 4, 5);
+}
+function gridLine(a, b) {
+    pointsArray.push(gridVertices[a]);
+    colorsArray.push(vertexColors[a]);
+    pointsArray.push(gridVertices[b]);
+    colorsArray.push(vertexColors[b]);
+}
+/////////////////////////////
 window.onload = function init() {
 
     canvas = document.getElementById( "gl-canvas" );
@@ -106,7 +125,10 @@ window.onload = function init() {
     var program = initShaders( gl, "vertex-shader", "fragment-shader" );
     gl.useProgram( program );
 
-    colorCube();
+    //colorCube();
+    grid();
+    
+    console.log(pointsArray);
 
 
 /////////////
@@ -115,8 +137,13 @@ window.onload = function init() {
     uRotation = gl.getUniformLocation(program, "uRotation");
     uView = gl.getUniformLocation(program, "uView");
     uProjection = gl.getUniformLocation(program, "uProjection");
+    gl.uniform3f(uScale, 0.5, 0.5, 0.5);
+    gl.uniform3f(uTranslation, 0, 0, 0);
+    gl.uniform3f(uRotation, 0, 30, 0);
+    
 /////////////
 
+    
     var cBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer );
     gl.bufferData( gl.ARRAY_BUFFER, flatten(colorsArray), gl.STATIC_DRAW );
@@ -168,6 +195,6 @@ var render = function(){
     gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
     gl.uniformMatrix4fv( projection, false, flatten(pMatrix) );
 
-    gl.drawArrays( gl.TRIANGLES, 0, NumVertices );
+    gl.drawArrays( gl.LINE_LOOP, 0, NumVertices );
     requestAnimFrame(render);
 }

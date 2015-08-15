@@ -65,13 +65,13 @@ void main()
 	);
 	mat4 scale = mat4 (
 		uScale.x, 0, 0, 0,
-		0, uScale.x, 0, 0,
-		0, 0, uScale.x, 0,
+		0, uScale.y, 0, 0,
+		0, 0, uScale.z, 0,
 		0, 0, 0, 1
 	);
     
 
-    gl_Position = projection*modelView*vPosition;
+    gl_Position = projection*modelView*translation*scale*rx*ry*rz*vPosition;
     fColor = vColor;
 } 
 </script>
