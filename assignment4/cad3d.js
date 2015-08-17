@@ -79,7 +79,7 @@ function init() {
 function onNearClipPickerChange(evt){
 	var label = $('labelNearClip');
 	label.innerHTML = String($('nearClipPicker').value);
-	var near = Number(getPickerValue('nearClipPicker', 0.3));
+	var near = Number(getPickerValue('nearClipPicker', 4));
 	var pMatrix = gCamera.lense(gCamera.fovy, gCamera.aspect, near, gCamera.far);
 	gShaders.setCamera(gCamera);
 	render();
@@ -595,7 +595,7 @@ function Camera(){
 	this.phi = 45 * Math.PI/180.0;
 	this.fovy = 45.0;
 	this.aspect = 1.0;
-	this.near = 0.3;
+	this.near = 3;
 	this.far = 3.0;
 	this.radius = 4.0;
 	

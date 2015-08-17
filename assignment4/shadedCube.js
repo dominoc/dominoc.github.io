@@ -153,7 +153,7 @@ var render = function(){
 
     if(flag) theta[axis] += 2.0;
 
-    modelView = mat4();
+    modelView = mat4();   
     modelView = mult(modelView, rotate(theta[xAxis], [1, 0, 0] ));
     modelView = mult(modelView, rotate(theta[yAxis], [0, 1, 0] ));
     modelView = mult(modelView, rotate(theta[zAxis], [0, 0, 1] ));
