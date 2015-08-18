@@ -191,3 +191,88 @@ function Cone(shader, id, origin, color, sides, desc){
 }
 Cone.prototype = Object.create(Geometry.prototype);
 Cone.prototype.constructor = Cone;
+
+function Cylinder(shader, id, origin, color, sides, desc){
+	Geometry.call(this, shader, id);
+	this.desc = (desc) ? desc : "Cylinder";
+	this.translation = origin;
+	this.color = color;	
+	var mRadius = 0.3;
+	var mSides = sides;
+	var mStartAngle = 0;
+	var mHeight = mRadius * 2;
+	var vertices = GCreateNgon(mSides, mStartAngle, mRadius);
+	//bottom flat face
+	for (var side = 0; side < (mSides - 1); side++){
+		var a = vec3(0,0,0);
+		var b = vec3(vertices[side].x, 0, vertices[side].y);
+		var c = vec3(vertices[side+1].x, 0, vertices[side+1].y);
+		this.points.push(a, b, c);
+	}
+	this.points.push(
+		vec3(0, 0, 0),
+		vec3(vertices[vertices.length-1].x, 0, vertices[vertices.length-1].y),
+		vec3(vertices[0].x, 0, vertices[0].y)
+	);
+	//top face
+	for (var side = 0; side < (mSides - 1); side++){
+		var a = vec3(0,mHeight,0);
+		var b = vec3(vertices[side+1].x, mHeight, vertices[side+1].y);
+		var c = vec3(vertices[side].x, mHeight, vertices[side].y);
+		this.points.push(a, b, c);
+	}
+	this.points.push(
+		vec3(0, mHeight, 0),
+		vec3(vertices[0].x, mHeight, vertices[0].y),
+		vec3(vertices[vertices.length-1].x, mHeight, vertices[vertices.length-1].y)
+	);
+
+	//sides		
+	for (var side = 0; side < (mSides - 1); side++){
+		var a = vec3(vertices[side].x,0,vertices[side].y);
+		var b = vec3(vertices[side].x, mHeight, vertices[side].y);
+		var c = vec3(vertices[side+1].x, mHeight, vertices[side+1].y);
+		var d = vec3(vertices[side+1].x, 0, vertices[side+1].y);
+		this.points.push(a, b, c);
+		this.points.push(a, c, d);
+	}
+	this.points.push(
+		vec3(vertices[vertices.length-1].x, 0, vertices[vertices.length-1].y),
+		vec3(vertices[vertices.length-1].x, mHeight, vertices[vertices.length-1].y),
+		vec3(vertices[0].x, 0, vertices[0].y)
+	);
+	this.points.push(
+		vec3(vertices[vertices.length-1].x, mHeight, vertices[vertices.length-1].y),
+		vec3(vertices[0].x,mHeight, vertices[0].y),
+		vec3(vertices[0].x, 0, vertices[0].y)
+	);
+
+	this.start = this.shader.getDataLength();
+	this.shader.fillVertexData(flatten(this.points), this.shader.getDataLength(),
+		this.points.length);
+	this.length = this.points.length;
+	if (DEBUG)
+		console.log(this);
+}
+Cylinder.prototype = Object.create(Geometry.prototype);
+Cylinder.prototype.constructor = Cylinder;
+
+function Line (shader, id, origin, color){
+	Geometry.call(this, shader, id);
+	this.desc = "Line";
+	this.translation = origin;
+	this.color = color;	
+	this.points = [
+		vec3(-10,0,0),
+		vec3(0,0,0),
+		vec3(10,0,0)
+	];
+	this.start = this.shader.getDataLength();
+	this.shader.fillVertexData(flatten(this.points), this.shader.getDataLength(),
+		this.points.length);
+	this.length = this.points.length;
+	if (DEBUG)
+		console.log(this);
+}
+Line.prototype = Object.create(Geometry.prototype);
+Line.prototype.constructor = Line;

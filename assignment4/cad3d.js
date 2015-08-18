@@ -50,11 +50,12 @@ function init() {
 	gl.enable(gl.DEPTH_TEST);
 	gl.clearColor(COLORS.CANVAS[0], 
 		COLORS.CANVAS[1], COLORS.CANVAS[2], COLORS.CANVAS[3]);
-	
+console.log('1');	
 	gCamera = new Camera();
+console.log('2');	
 	gShaders = new Shaders(gl, MAX_POINTS);
 	gShaders.setCamera(gCamera);
-	
+
 	displayXYZReference();
 
 	$('colorPicker').onchange = onColorPickerChange;
@@ -62,6 +63,8 @@ function init() {
 	$('xRotPicker').onchange = onXRotPickerChange;
 	$('yRotPicker').onchange = onYRotPickerChange;
 	$('zRotPicker').onchange = onZRotPickerChange;
+	// $('camLatPicker').onchange = onCamLatPickerChange;
+	// $('camLngPicker').onchange = onCamLngPickerChange;
 	$('nearClipPicker').onchange = onNearClipPickerChange;
 	$('farClipPicker').onchange = onFarClipPickerChange;
 	$('modeCombo').onchange = onModeComboChange;
@@ -73,9 +76,25 @@ function init() {
 	canvas.addEventListener('mousewheel', onCanvasMouseWheel);
 	$('saveButton').onclick = onSaveButtonClick;
 	$('clearButton').onclick = onClearButtonClick;
-	
 	render();
 }
+// function onCamLatPickerChange(evt){
+	// var label = $('labelCamLatitude');
+	// var latitude = Number($('camLatPicker').value);
+	// label.innerHTML = String(latitude);
+	// gCamera.move(gCamera.radius, 
+	// 	gCamera.longitude*180/Math.PI,
+	// 	latitude);
+	// gShaders.setCamera(gCamera);
+// }
+// function onCamLngPickerChange(evt){
+	// var label = $('labelCamLongitude');
+	// var longitude = Number($('camLngPicker').value);
+	// label.innerHTML = String(longitude);
+	// gCamera.move( gCamera.radius,
+	// 	longitude, gCamera.latitude*180/Math.PI);
+	// gShaders.setCamera(gCamera);
+// }
 function onNearClipPickerChange(evt){
 	var label = $('labelNearClip');
 	label.innerHTML = String($('nearClipPicker').value);
@@ -201,9 +220,9 @@ function onModeComboChange(evt){
 	}
 }
 function displayXYZReference(){
-	var xRefLine = new Line(-1, [0,0,0], COLORS.RED);
-	var yRefLine = new Line(-2, [0,0,0], COLORS.GREEN);
-	var zRefLine = new Line(-3, [0,0,0], COLORS.BLUE);
+	var xRefLine = new Line(gShaders, -1, [0,0,0], COLORS.RED);
+	var yRefLine = new Line(gShaders, -2, [0,0,0], COLORS.GREEN);
+	var zRefLine = new Line(gShaders, -3, [0,0,0], COLORS.BLUE);
 	
 	xRefLine.setRotation([0,0,0]);
 	yRefLine.setRotation([0,0,90]);
@@ -360,21 +379,21 @@ function onCanvasMouseDown(evt){
 		GEOMETRIES.push(cone);
 	}
 	else if (MODE === DrawMode.DRAW_PYRAMID){
-		var pyramid = new Cone(geometryId,
+		var pyramid = new Cone(gShaders, geometryId,
 			[clipPoint.x, clipPoint.y, 0], color, 4, "Pyramid");
 			pyramid.setScale([scale,scale,scale]);
 			pyramid.setRotation([xRot,yRot,zRot]);
 			GEOMETRIES.push(pyramid);
 	}
 	else if (MODE === DrawMode.DRAW_CYLINDER){
-		var cylinder = new Cylinder(geometryId,
+		var cylinder = new Cylinder(gShaders, geometryId,
 			[clipPoint.x, clipPoint.y, 0], color, 20, "Cylinder");
 		cylinder.setScale([scale, scale, scale]);
 		cylinder.setRotation([xRot, yRot, zRot]);
 		GEOMETRIES.push(cylinder);
 	}
 	else if (MODE === DrawMode.DRAW_CUBE){
-		var cube = new Cylinder(geometryId,
+		var cube = new Cylinder(gShaders, geometryId,
 			[clipPoint.x, clipPoint.y, 0], color, 4, "Cube");
 		cube.setScale([scale,scale,scale]);
 		cube.setRotation([xRot,yRot,zRot]);
@@ -593,8 +612,8 @@ Shaders.prototype.getDataLength = function() {
 function Camera(){
 	var me = this;
 	//perspective variables
-	this.theta = 45 * Math.PI/180.0;
-	this.phi = 45 * Math.PI/180.0;
+	this.longitude = 45 * Math.PI/180.0;
+	this.latitude = 45 * Math.PI/180.0;
 	this.fovy = 45.0;
 	this.aspect = 1.0;
 	this.near = 3;
@@ -624,149 +643,12 @@ Camera.prototype.lense = function(fovy, aspect, near, far){
 	return this.pMatrix;
 }
 Camera.prototype.move = function(radius, lonDeg, latDeg){
-	this.theta = lonDeg * Math.PI/180.0;
-	this.phi = latDeg * Math.PI/180.0;
+	this.longitude = lonDeg * Math.PI/180.0;
+	this.latitude = latDeg * Math.PI/180.0;
 	this.radius = radius;
-	var eye = vec3(	this.radius*Math.sin(this.theta) * Math.cos(this.phi),
-					this.radius*Math.sin(this.theta) * Math.sin(this.phi),
-					this.radius*Math.cos(this.theta));
+	var eye = vec3(	this.radius*Math.sin(this.longitude) * Math.cos(this.latitude),
+					this.radius*Math.sin(this.longitude) * Math.sin(this.latitude),
+					this.radius*Math.cos(this.longitude));
 	this.vMatrix = lookAt(eye, this.at, this.up);
 	return this.vMatrix;
-}
-function Line (id,origin,color) {
-	var me = this;
-	this.desc = "Line";
-	this.geometryId = Number(id);
-	this.start = 0;
-	this.length;
-	this.color = color;
-	this.points = [];
-	this.translation = [0,0,0];
-	this.rotation = [0,0,0];
-	this.scale = [1,1,1];
-	init();
-	function init(){
-		me.points = [
-			vec3(-10,0,0),
-			vec3(0,0,0),
-			vec3(10,0,0)
-		];
-		me.translation = origin;
-		me.start = gShaders.getDataLength();
-		gShaders.fillVertexData(flatten(me.points), gShaders.getDataLength(),
-			me.points.length);
-		me.length = me.points.length;
-		if (DEBUG)
-			console.log(me);
-	} 
-}
-Line.prototype.setScale = function(scale){
-	this.scale = scale;
-}
-Line.prototype.setTranslation = function(translation){
-	this.translation = translation;
-}
-Line.prototype.setRotation = function(rotation){
-	this.rotation = rotation;
-}
-
-function Cylinder (id,origin,color,sides,desc){
-	var me = this;
-	this.desc = desc;
-	this.geometryId = Number(id);
-	this.start = 0;
-	this.length;
-	this.color = color;
-	this.points = [];
-	this.translation = [0,0,0];
-	this.rotation = [0,0,0];
-	this.scale = [1,1,1];
-	var mRadius = 0.3;
-	var mSides = sides;
-	var mStartAngle = 0;
-	var mHeight = mRadius * 2;
-	init();
-	function init(){
-		
-		var vertices = createNgon(mSides, mStartAngle, mRadius);
-		//bottom flat face
-		for (var side = 0; side < (mSides - 1); side++){
-			var a = vec3(0,0,0);
-			var b = vec3(vertices[side].x, 0, vertices[side].y);
-			var c = vec3(vertices[side+1].x, 0, vertices[side+1].y);
-			me.points.push(a, b, c);
-		}
-		me.points.push(
-			vec3(0, 0, 0),
-			vec3(vertices[vertices.length-1].x, 0, vertices[vertices.length-1].y),
-			vec3(vertices[0].x, 0, vertices[0].y)
-		);
-		//top face
-		for (var side = 0; side < (mSides - 1); side++){
-			var a = vec3(0,mHeight,0);
-			var b = vec3(vertices[side+1].x, mHeight, vertices[side+1].y);
-			var c = vec3(vertices[side].x, mHeight, vertices[side].y);
-			me.points.push(a, b, c);
-		}
-		me.points.push(
-			vec3(0, mHeight, 0),
-			vec3(vertices[0].x, mHeight, vertices[0].y),
-			vec3(vertices[vertices.length-1].x, mHeight, vertices[vertices.length-1].y)
-		);
-
-		//sides		
-		for (var side = 0; side < (mSides - 1); side++){
-			var a = vec3(vertices[side].x,0,vertices[side].y);
-			var b = vec3(vertices[side].x, mHeight, vertices[side].y);
-			var c = vec3(vertices[side+1].x, mHeight, vertices[side+1].y);
-			var d = vec3(vertices[side+1].x, 0, vertices[side+1].y);
-			me.points.push(a, b, c);
-			me.points.push(a, c, d);
-		}
-		me.points.push(
-			vec3(vertices[vertices.length-1].x, 0, vertices[vertices.length-1].y),
-			vec3(vertices[vertices.length-1].x, mHeight, vertices[vertices.length-1].y),
-			vec3(vertices[0].x, 0, vertices[0].y)
-		);
-		me.points.push(
-			vec3(vertices[vertices.length-1].x, mHeight, vertices[vertices.length-1].y),
-			vec3(vertices[0].x,mHeight, vertices[0].y),
-			vec3(vertices[0].x, 0, vertices[0].y)
-		);
-
-		me.translation = origin;
-		me.start = gShaders.getDataLength();
-		gShaders.fillVertexData(flatten(me.points), gShaders.getDataLength(),
-			me.points.length);
-		me.length = me.points.length;
-		if (DEBUG)
-			console.log(me);		
-	}
-	function createNgon (n, startAngle, r1) {
-		var vertices = [];
-		var dA = Math.PI * 2 / n;
-		var angle;
-		var r = 0.9;
-		if (arguments.length === 3) {
-			r = r1;
-		}
-		for (var i=0; i<n; i++){
-			angle = startAngle + dA*i;
-			vertices.push(
-				{ x : r*Math.cos(angle), 
-				  y : r*Math.sin(angle)
-				});
-		}
-		return vertices;
-	}
-	
-}
-Cylinder.prototype.setScale = function(scale){
-	this.scale = scale;
-}
-Cylinder.prototype.setTranslation = function(translation){
-	this.translation = translation;
-}
-Cylinder.prototype.setRotation = function(rotation){
-	this.rotation = rotation;
 }
