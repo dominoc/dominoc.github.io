@@ -13,10 +13,11 @@ var canvas;
 var gl;
 
 
-var NumVertices  = 6;   // 36;
+var NumVertices  = 36;   // 36;
 
 var pointsArray = [];
 var colorsArray = [];
+var normalsArray = [];
 
 var vertices = [
     vec4(-0.5, -0.5,  1.5, 1.0),
@@ -40,6 +41,17 @@ var vertexColors = [
     vec4( 1.0, 1.0, 1.0, 1.0 ),  // white
 ];
 
+var lightPosition = vec4(0,5,5,0);
+var lightAmbient = vec4(0.2,0.2,0.2,1);
+var lightDiffuse = vec4(1,1,1,1);
+var lightSpecular = vec4(1,1,1,1);
+
+var materialAmbient = vec4(1,0,1,1);
+var materialDiffuse = vec4(1,0.8,0,1);
+var materialSpecular = vec4(1,0.8,0,1);
+var materialShininess = 200;
+
+var ambientColor, diffuseColor, specularColor;
 
 var near = 0.3;
 var far = 5;
@@ -58,18 +70,29 @@ const at = vec3(0.0, 0.0, 0.0);
 const up = vec3(0.0, 1.0, 0.0);
 
 function quad(a, b, c, d) {
+    var t1 = subtract(vertices[b], vertices[a]);
+    var t2 = subtract(vertices[c], vertices[b]);
+    var normal = cross(t1, t2);
+    normal = vec3(normal);
+        
      pointsArray.push(vertices[a]);
-     colorsArray.push(vertexColors[a]);
+     normalsArray.push(normal);
+    //  colorsArray.push(vertexColors[a]);
      pointsArray.push(vertices[b]);
-     colorsArray.push(vertexColors[a]);
+     normalsArray.push(normal);
+    //  colorsArray.push(vertexColors[a]);
      pointsArray.push(vertices[c]);
-     colorsArray.push(vertexColors[a]);
+     normalsArray.push(normal);
+    //  colorsArray.push(vertexColors[a]);
      pointsArray.push(vertices[a]);
-     colorsArray.push(vertexColors[a]);
+     normalsArray.push(normal);
+    //  colorsArray.push(vertexColors[a]);
      pointsArray.push(vertices[c]);
-     colorsArray.push(vertexColors[a]);
+     normalsArray.push(normal);
+    //  colorsArray.push(vertexColors[a]);
      pointsArray.push(vertices[d]);
-     colorsArray.push(vertexColors[a]);
+     normalsArray.push(normal);
+    //  colorsArray.push(vertexColors[a]);
 }
 
 
@@ -125,11 +148,10 @@ window.onload = function init() {
     var program = initShaders( gl, "vertex-shader", "fragment-shader" );
     gl.useProgram( program );
 
-    //colorCube();
-    grid();
+    colorCube();
+    //grid();
     
-    console.log(pointsArray);
-
+    // console.log(pointsArray);
 
 /////////////
     uTranslation = gl.getUniformLocation(program, "uTranslation");
@@ -144,13 +166,13 @@ window.onload = function init() {
 /////////////
 
     
-    var cBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(colorsArray), gl.STATIC_DRAW );
+    // var cBuffer = gl.createBuffer();
+    // gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer );
+    // gl.bufferData( gl.ARRAY_BUFFER, flatten(colorsArray), gl.STATIC_DRAW );
 
-    var vColor = gl.getAttribLocation( program, "vColor" );
-    gl.vertexAttribPointer( vColor, 4, gl.FLOAT, false, 0, 0 );
-    gl.enableVertexAttribArray( vColor);
+    // var vColor = gl.getAttribLocation( program, "vColor" );
+    // gl.vertexAttribPointer( vColor, 4, gl.FLOAT, false, 0, 0 );
+    // gl.enableVertexAttribArray( vColor);
 
     var vBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
@@ -160,6 +182,31 @@ window.onload = function init() {
     gl.vertexAttribPointer( vPosition, 4, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vPosition );
 
+    var nBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW);
+    
+    var vNormal = gl.getAttribLocation (program, "vNormal");
+    gl.vertexAttribPointer(vNormal, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vNormal);
+    
+    var ambientProduct = mult(lightAmbient, materialAmbient);
+    var diffuseProduct = mult(lightDiffuse, materialDiffuse);
+    var specularProduct = mult(lightSpecular, materialSpecular);
+    
+
+    gl.uniform4fv(gl.getUniformLocation(program, "uAmbientProduct"),
+        flatten(ambientProduct));
+    gl.uniform4fv(gl.getUniformLocation(program, "uDiffuseProduct"),
+        flatten(diffuseProduct));
+    gl.uniform4fv(gl.getUniformLocation(program, "uSpecularProduct"),
+        flatten(diffuseProduct));
+    gl.uniform4fv(gl.getUniformLocation(program, "uLightPosition"),
+        flatten(lightPosition));
+        
+    gl.uniform1f(gl.getUniformLocation(program, "uShininess"), 
+        materialShininess);
+    
     modelView = gl.getUniformLocation( program, "modelView" );
     projection = gl.getUniformLocation( program, "projection" );
 
@@ -195,6 +242,6 @@ var render = function(){
     gl.uniformMatrix4fv( modelView, false, flatten(mvMatrix) );
     gl.uniformMatrix4fv( projection, false, flatten(pMatrix) );
 
-    gl.drawArrays( gl.LINE_LOOP, 0, NumVertices );
+    gl.drawArrays( gl.TRIANGLES, 0, NumVertices );
     requestAnimFrame(render);
 }

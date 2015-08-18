@@ -330,28 +330,30 @@ function onCanvasMouseDown(evt){
 	}
 	
 	if (MODE === DrawMode.DRAW_TRIANGLE){
-		var triangle = new Triangle(geometryId, 
+		// var triangle = new Triangle(gShaders, geometryId,
+		// 		[clipPoint.x, clipPoint.y, 0], color);
+		var triangle = new Triangle(gShaders, geometryId, 
 			[clipPoint.x, clipPoint.y, 0], color);
 		triangle.setScale([scale,scale,scale]);
 		triangle.setRotation([xRot, yRot, zRot]);
 		GEOMETRIES.push(triangle);
 	}
 	else if (MODE === DrawMode.DRAW_CIRCLE){
-		var circle = new Circle(geometryId,
+		var circle = new Circle(gShaders, geometryId,
 			[clipPoint.x, clipPoint.y, 0], color);
 		circle.setScale([scale,scale,scale]);
 		circle.setRotation([xRot, yRot, zRot]);
 		GEOMETRIES.push(circle);
 	}
 	else if (MODE === DrawMode.DRAW_SPHERE){
-		var sphere = new Sphere(geometryId, 
+		var sphere = new Sphere(gShaders, geometryId, 
 			[clipPoint.x, clipPoint.y, 0], color);
 		sphere.setScale([scale,scale,scale]);
 		sphere.setRotation([xRot, yRot, zRot]);
 		GEOMETRIES.push(sphere);
 	}
 	else if (MODE === DrawMode.DRAW_CONE){
-		var cone = new Cone(geometryId,
+		var cone = new Cone(gShaders, geometryId,
 			[clipPoint.x, clipPoint.y, 0], color, 20, "Cone");
 		cone.setScale([scale, scale, scale]);
 		cone.setRotation([xRot, yRot, zRot]);
@@ -631,117 +633,6 @@ Camera.prototype.move = function(radius, lonDeg, latDeg){
 	this.vMatrix = lookAt(eye, this.at, this.up);
 	return this.vMatrix;
 }
-function Triangle(id, origin, color){
-	var me = this;
-	this.desc = "Triangle";
-	this.geometryId = Number(id);
-	this.start = 0;
-	this.length;
-	this.color = color;
-	this.points = [];
-	this.translation = [0,0,0];
-	this.rotation = [0,0,0];
-	// this.origin = origin;
-	this.scale = [1,1,1];
-	init();
-	function init(){
-		me.points = [
-			vec3(-0.1, -0.1, 0),
-			vec3(0, 0.1, 0),
-			vec3(0.1, -0.1, 0)
-		];
-
-		me.translation = origin;
-		me.start = gShaders.getDataLength();
-		gShaders.fillVertexData(flatten(me.points), gShaders.getDataLength(), 
-			me.points.length);
-		me.length = me.points.length;
-		if (DEBUG)
-			console.log(me);
-	}
-}
-Triangle.prototype.setScale = function(scale){
-	this.scale = scale;
-}
-Triangle.prototype.setTranslation = function(translation){
-	this.translation = translation;
-}
-Triangle.prototype.setRotation = function(rotation){
-	this.rotation = rotation;
-}
-function Sphere(id, origin, color){
-	var me = this;
-	this.desc = "Sphere";
-	this.geometryId = Number(id);
-	this.start = 0;
-	this.length;
-	this.scale = [1,1,1];
-	this.rotation = [0,0,0];
-	this.color = color;
-	this.points = [];
-	this.translation = [0,0,0];
-	var mMaxLatBands = 20;
-	var mMaxLngBands = 20;
-	var mRadius = 0.3;
-	this.radius = mRadius;
-	init();
-	function init() {
-		var points = [];
-		me.translation = origin;
-		for (var latBand = 0; latBand <= mMaxLatBands; latBand++){
-			var theta = latBand * Math.PI / mMaxLatBands;
-			var sinTheta = Math.sin(theta);
-			var cosTheta = Math.cos(theta);
-			for (var lngBand = 0; lngBand <= mMaxLngBands; lngBand++){
-				var phi = lngBand * 2 * Math.PI/ mMaxLngBands;
-				var sinPhi = Math.sin(phi);
-				var cosPhi = Math.cos(phi);
-				
-				var x = cosPhi * sinTheta;
-				var y = cosTheta;
-				var z = sinPhi * sinTheta;
-								
-				var point = vec3(
-					mRadius * x, 
-					mRadius * y, 
-					mRadius * z);
-				points.push(point);
-			}
-		}
-
-		var pointIndexes = [];
-		for (var latBand = 0; latBand < mMaxLatBands; latBand++)
-			for (var lngBand = 0; lngBand < mMaxLngBands; lngBand++){
-				var first = (latBand * (mMaxLngBands + 1)) + lngBand;
-				var second = first + mMaxLngBands + 1;
-				pointIndexes.push(first);
-				pointIndexes.push(second);
-				pointIndexes.push(first+1);
-				pointIndexes.push(second);
-				pointIndexes.push(second+1);
-				pointIndexes.push(first+1);
-			}
-		for (var i=0; i< pointIndexes.length; i++){
-			me.points.push(points[pointIndexes[i]]);
-		}
-		me.start = gShaders.getDataLength();
-		gShaders.fillVertexData(flatten(me.points), gShaders.getDataLength(),
-			me.points.length);
-		me.length = me.points.length;
-				
-		if (DEBUG)
-			console.log(me);
-	}
-}
-Sphere.prototype.setScale = function(scale){
-	this.scale = scale;
-}
-Sphere.prototype.setTranslation = function(translation){
-	this.translation = translation;
-}
-Sphere.prototype.setRotation = function(rotation){
-	this.rotation = rotation;
-}
 function Line (id,origin,color) {
 	var me = this;
 	this.desc = "Line";
@@ -776,154 +667,6 @@ Line.prototype.setTranslation = function(translation){
 	this.translation = translation;
 }
 Line.prototype.setRotation = function(rotation){
-	this.rotation = rotation;
-}
-function Circle (id,origin,color){
-	var me = this;
-	this.desc = "Circle";
-	this.geometryId = Number(id);
-	this.start = 0;
-	this.length;
-	this.color = color;
-	this.points = [];
-	this.translation = [0,0,0];
-	this.rotation = [0,0,0];
-	this.scale = [1,1,1];
-	var mRadius = 0.3;
-	var mSides = 20;
-	var mStartAngle = 0;
-	init();
-	function init(){
-		var vertices = createNgon(mSides, mStartAngle, mRadius);
-		for (var side = 0; side < (mSides - 1); side++){
-			var a = vec3(0,0,0);
-			var b = vec3(vertices[side+1].x, vertices[side+1].y);
-			var c = vec3(vertices[side].x, vertices[side].y);
-			me.points.push(a, b, c);
-		}
-		me.points.push(
-			vec3(0,0,0),
-			vec3(vertices[0].x, vertices[0].y, 0),
-			vec3(vertices[vertices.length-1].x, vertices[vertices.length-1].y, 0)
-		);
-		// me.points.push(me.points[0], me.points[1], me.points[2]);
-		me.translation = origin;
-		me.start = gShaders.getDataLength();
-		gShaders.fillVertexData(flatten(me.points), gShaders.getDataLength(),
-			me.points.length);
-		me.length = me.points.length;
-		if (DEBUG)
-			console.log(me);		
-	}
-	function createNgon (n, startAngle, r1) {
-		var vertices = [];
-		var dA = Math.PI * 2 / n;
-		var angle;
-		var r = 0.9;
-		if (arguments.length === 3) {
-			r = r1;
-		}
-		for (var i=0; i<n; i++){
-			angle = startAngle + dA*i;
-			vertices.push(
-				{ x : r*Math.cos(angle), 
-				  y : r*Math.sin(angle)
-				});
-		}
-		return vertices;
-	}
-	
-}
-Circle.prototype.setScale = function(scale){
-	this.scale = scale;
-}
-Circle.prototype.setTranslation = function(translation){
-	this.translation = translation;
-}
-Circle.prototype.setRotation = function(rotation){
-	this.rotation = rotation;
-}
-function Cone (id,origin,color,sides,desc){
-	var me = this;
-	this.desc = "Cone";
-	this.geometryId = Number(id);
-	this.start = 0;
-	this.length;
-	this.color = color;
-	this.points = [];
-	this.translation = [0,0,0];
-	this.rotation = [0,0,0];
-	this.scale = [1,1,1];
-	var mRadius = 0.3;
-	var mSides = sides;
-	var mStartAngle = 0;
-	var mHeight = mRadius * 2;
-	init();
-	function init(){
-		if (desc){
-			me.desc = desc;
-		}
-		var vertices = createNgon(mSides, mStartAngle, mRadius);
-		//bottom flat face
-		for (var side = 0; side < (mSides - 1); side++){
-			var a = vec3(0,0,0);
-			var b = vec3(vertices[side].x, 0, vertices[side].y);
-			var c = vec3(vertices[side+1].x, 0, vertices[side+1].y);
-			me.points.push(a, b, c);
-		}
-		me.points.push(
-			vec3(0, 0, 0),
-			vec3(vertices[vertices.length-1].x, 0, vertices[vertices.length-1].y),
-			vec3(vertices[0].x, 0, vertices[0].y)
-		);
-
-		//sides		
-		for (var side = 0; side < (mSides - 1); side++){
-			var a = vec3(0,mHeight,0);
-			var b = vec3(vertices[side+1].x, 0, vertices[side+1].y);
-			var c = vec3(vertices[side].x, 0, vertices[side].y);
-			me.points.push(a, b, c);
-		}
-		me.points.push(
-			vec3(0,mHeight,0),
-			vec3(vertices[0].x,0, vertices[0].y),
-			vec3(vertices[vertices.length-1].x, 0, vertices[vertices.length-1].y)
-		);
-
-		me.translation = origin;
-		me.start = gShaders.getDataLength();
-		gShaders.fillVertexData(flatten(me.points), gShaders.getDataLength(),
-			me.points.length);
-		me.length = me.points.length;
-		if (DEBUG)
-			console.log(me);		
-	}
-	function createNgon (n, startAngle, r1) {
-		var vertices = [];
-		var dA = Math.PI * 2 / n;
-		var angle;
-		var r = 0.9;
-		if (arguments.length === 3) {
-			r = r1;
-		}
-		for (var i=0; i<n; i++){
-			angle = startAngle + dA*i;
-			vertices.push(
-				{ x : r*Math.cos(angle), 
-				  y : r*Math.sin(angle)
-				});
-		}
-		return vertices;
-	}
-	
-}
-Cone.prototype.setScale = function(scale){
-	this.scale = scale;
-}
-Cone.prototype.setTranslation = function(translation){
-	this.translation = translation;
-}
-Cone.prototype.setRotation = function(rotation){
 	this.rotation = rotation;
 }
 
