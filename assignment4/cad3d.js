@@ -14,7 +14,7 @@ var DrawMode = {
 	EDIT : 9,
 	DRAW_CUBE : 10
 };
-var MODE = DrawMode.DRAW_TRIANGLE;
+var MODE = DrawMode.DRAW_SPHERE;
 var COLORS = {
 	CANVAS : [0.8, 0.8, 0.8, 1.0],
 	BLACK : [0, 0, 0, 1],
@@ -49,52 +49,75 @@ function init() {
 	gl.viewport(0,0,canvas.width,canvas.height);
 	gl.enable(gl.DEPTH_TEST);
 	gl.clearColor(COLORS.CANVAS[0], 
-		COLORS.CANVAS[1], COLORS.CANVAS[2], COLORS.CANVAS[3]);
-console.log('1');	
+		COLORS.CANVAS[1], COLORS.CANVAS[2], COLORS.CANVAS[3]);	
 	gCamera = new Camera();
-console.log('2');	
+	
 	gShaders = new Shaders(gl, MAX_POINTS);
 	gShaders.setCamera(gCamera);
 
 	displayXYZReference();
 
-	$('colorPicker').onchange = onColorPickerChange;
-	$('scalePicker').onchange = onScalePickerChange;
-	$('xRotPicker').onchange = onXRotPickerChange;
-	$('yRotPicker').onchange = onYRotPickerChange;
-	$('zRotPicker').onchange = onZRotPickerChange;
-	// $('camLatPicker').onchange = onCamLatPickerChange;
-	// $('camLngPicker').onchange = onCamLngPickerChange;
-	$('nearClipPicker').onchange = onNearClipPickerChange;
-	$('farClipPicker').onchange = onFarClipPickerChange;
-	$('modeCombo').onchange = onModeComboChange;
-	$('modeCombo').onkeydown = onModeComboChange;
+	$('colorPicker').addEventListener('change', onColorPickerChange);
+	$('scalePicker').addEventListener('change', onScalePickerChange);
+	$('xRotPicker').addEventListener('change', onXRotPickerChange);
+	$('yRotPicker').addEventListener('change', onYRotPickerChange);
+	$('zRotPicker').addEventListener('change', onZRotPickerChange);
+	$('geomAmbientPicker').addEventListener('change', onGeomAmbientPickerChange);
+	$('geomDiffusePicker').addEventListener('change', onGeomDiffusePickerChange);
+	$('camLatPicker').addEventListener('change', onCamLatPickerChange);
+	$('camLngPicker').addEventListener('change', onCamLngPickerChange);
+	$('nearClipPicker').addEventListener('change', onNearClipPickerChange);
+	$('farClipPicker').addEventListener('change', onFarClipPickerChange);
+	$('modeCombo').addEventListener('change', onModeComboChange);
+	$('modeCombo').addEventListener('keydown', onModeComboChange);
 	canvas.addEventListener('mousedown', onCanvasMouseDown);
 	canvas.addEventListener('mousemove', onCanvasMouseMove);
 	canvas.addEventListener('mouseup', onCanvasMouseUp);
 	canvas.addEventListener('mouseout', onCanvasMouseOut);
 	canvas.addEventListener('mousewheel', onCanvasMouseWheel);
-	$('saveButton').onclick = onSaveButtonClick;
-	$('clearButton').onclick = onClearButtonClick;
+	$('light1CheckBox').addEventListener('change', onLight1CheckBoxChange);
+	$('light2CheckBox').addEventListener('change', onLight2CheckBoxChange);
+	$('saveButton').addEventListener('click', onSaveButtonClick);
+	$('clearButton').addEventListener('click', onClearButtonClick);
 	render();
 }
-// function onCamLatPickerChange(evt){
-	// var label = $('labelCamLatitude');
-	// var latitude = Number($('camLatPicker').value);
-	// label.innerHTML = String(latitude);
-	// gCamera.move(gCamera.radius, 
-	// 	gCamera.longitude*180/Math.PI,
-	// 	latitude);
-	// gShaders.setCamera(gCamera);
-// }
-// function onCamLngPickerChange(evt){
-	// var label = $('labelCamLongitude');
-	// var longitude = Number($('camLngPicker').value);
-	// label.innerHTML = String(longitude);
-	// gCamera.move( gCamera.radius,
-	// 	longitude, gCamera.latitude*180/Math.PI);
-	// gShaders.setCamera(gCamera);
-// }
+function onLight1CheckBoxChange(evt){
+	var enabled = evt.target.checked;
+	$('light1X').disabled = !enabled;
+	$('light1Y').disabled = !enabled;
+	$('light1Z').disabled = !enabled;
+	$('light1AmbientPicker').disabled = !enabled;
+	$('light1DiffusePicker').disabled = !enabled;
+	$('light1SpecularPicker').disabled = !enabled;
+}
+function onLight2CheckBoxChange(evt){
+	var enabled = evt.target.checked;
+	$('light2X').disabled = !enabled;
+	$('light2Y').disabled = !enabled;
+	$('light2Z').disabled = !enabled;
+	$('light2AmbientPicker').disabled = !enabled;
+	$('light2DiffusePicker').disabled = !enabled;
+	$('light2SpecularPicker').disabled = !enabled;
+}
+function onCamLatPickerChange(evt){
+	var label = $('labelCamLatitude');
+	var latitude = Number($('camLatPicker').value);
+	label.innerHTML = String(latitude);
+	gCamera.move(gCamera.radius, 
+		gCamera.longitude*180/Math.PI,
+		latitude);
+	gShaders.setCamera(gCamera);
+	render();
+}
+function onCamLngPickerChange(evt){
+	var label = $('labelCamLongitude');
+	var longitude = Number($('camLngPicker').value);
+	label.innerHTML = String(longitude);
+	gCamera.move( gCamera.radius,
+		longitude, gCamera.latitude*180/Math.PI);
+	gShaders.setCamera(gCamera);
+	render();
+}
 function onNearClipPickerChange(evt){
 	var label = $('labelNearClip');
 	label.innerHTML = String($('nearClipPicker').value);
@@ -134,6 +157,27 @@ function onColorPickerChange(evt){
 	var color = getPickerColor('colorPicker');
 	if (gActiveGeometry){
 		gActiveGeometry.color = color;
+		render();
+	}
+}
+function onGeomAmbientPickerChange(evt){
+	var color = getPickerColor('geomAmbientPicker');
+	if (gActiveGeometry){
+		gActiveGeometry.setAmbient( color);
+		render();
+	}
+}
+function onGeomDiffusePickerChange(evt){
+	var color = getPickerColor('geomDiffusePicker');
+	if (gActiveGeometry){
+		gActiveGeometry.setDiffuse( color);
+		render();
+	}
+}
+function onGeomSpecularPickerChange(evt){
+	var color = getPickerColor('geomSpecularPicker');
+	if (gActiveGeometry){
+		gActiveGeometry.setSpecular( color);
 		render();
 	}
 }
@@ -260,7 +304,7 @@ function selectGeometry(point){
 	else {
 		var candidateId = Number(candidates[0]);
 		GEOMETRIES.forEach(function(geometry){
-			if (geometry.geometryId === candidateId){
+			if (geometry.id === candidateId){
 				foundGeometry = geometry;
 				return;
 			}
@@ -318,7 +362,7 @@ function showGeometryInfo(geometry){
 	infoBox.value = "";
 	var msg = '';
 	msg += geometry.desc + "\n";
-	msg += "Id: " + geometry.geometryId + '\n';	
+	msg += "Id: " + geometry.id + '\n';	
 	msg += "Origin: (" + geometry.translation[0] + "," +
 						geometry.translation[1] + "," +
 						geometry.translation[2] + ")\n";
@@ -341,6 +385,16 @@ function onCanvasMouseDown(evt){
 	var xRot = getPickerValue('xRotPicker', 0);
 	var yRot = getPickerValue('yRotPicker', 0);
 	var zRot = getPickerValue('zRotPicker',0);
+	var ambient = getPickerColor('geomAmbientPicker');
+	var diffuse = getPickerColor('geomDiffusePicker');
+	var specular = getPickerColor('geomSpecularPicker');
+	var shininess = getPickerValue('shininessTextBox', 100);
+	var material = {
+		ambient : ambient,
+		diffuse : diffuse,
+		specular : specular,
+		shininess : shininess
+	};
 
 	var geometryId = GEOMETRIES.length+1;
 	if (geometryId>255){
@@ -352,49 +406,49 @@ function onCanvasMouseDown(evt){
 		// var triangle = new Triangle(gShaders, geometryId,
 		// 		[clipPoint.x, clipPoint.y, 0], color);
 		var triangle = new Triangle(gShaders, geometryId, 
-			[clipPoint.x, clipPoint.y, 0], color);
+			[clipPoint.x, clipPoint.y, 0], material);
 		triangle.setScale([scale,scale,scale]);
 		triangle.setRotation([xRot, yRot, zRot]);
 		GEOMETRIES.push(triangle);
 	}
 	else if (MODE === DrawMode.DRAW_CIRCLE){
 		var circle = new Circle(gShaders, geometryId,
-			[clipPoint.x, clipPoint.y, 0], color);
+			[clipPoint.x, clipPoint.y, 0], material);
 		circle.setScale([scale,scale,scale]);
 		circle.setRotation([xRot, yRot, zRot]);
 		GEOMETRIES.push(circle);
 	}
 	else if (MODE === DrawMode.DRAW_SPHERE){
 		var sphere = new Sphere(gShaders, geometryId, 
-			[clipPoint.x, clipPoint.y, 0], color);
+			[clipPoint.x, clipPoint.y, 0], material);
 		sphere.setScale([scale,scale,scale]);
 		sphere.setRotation([xRot, yRot, zRot]);
 		GEOMETRIES.push(sphere);
 	}
 	else if (MODE === DrawMode.DRAW_CONE){
 		var cone = new Cone(gShaders, geometryId,
-			[clipPoint.x, clipPoint.y, 0], color, 20, "Cone");
+			[clipPoint.x, clipPoint.y, 0], material, 20, "Cone");
 		cone.setScale([scale, scale, scale]);
 		cone.setRotation([xRot, yRot, zRot]);
 		GEOMETRIES.push(cone);
 	}
 	else if (MODE === DrawMode.DRAW_PYRAMID){
 		var pyramid = new Cone(gShaders, geometryId,
-			[clipPoint.x, clipPoint.y, 0], color, 4, "Pyramid");
+			[clipPoint.x, clipPoint.y, 0], material, 4, "Pyramid");
 			pyramid.setScale([scale,scale,scale]);
 			pyramid.setRotation([xRot,yRot,zRot]);
 			GEOMETRIES.push(pyramid);
 	}
 	else if (MODE === DrawMode.DRAW_CYLINDER){
 		var cylinder = new Cylinder(gShaders, geometryId,
-			[clipPoint.x, clipPoint.y, 0], color, 20, "Cylinder");
+			[clipPoint.x, clipPoint.y, 0], material, 20, "Cylinder");
 		cylinder.setScale([scale, scale, scale]);
 		cylinder.setRotation([xRot, yRot, zRot]);
 		GEOMETRIES.push(cylinder);
 	}
 	else if (MODE === DrawMode.DRAW_CUBE){
 		var cube = new Cylinder(gShaders, geometryId,
-			[clipPoint.x, clipPoint.y, 0], color, 4, "Cube");
+			[clipPoint.x, clipPoint.y, 0], material, 4, "Cube");
 		cube.setScale([scale,scale,scale]);
 		cube.setRotation([xRot,yRot,zRot]);
 		GEOMETRIES.push(cube);
@@ -410,6 +464,10 @@ function onCanvasMouseDown(evt){
 			setPickerValue('zRotPicker','labelZRot', geometryToEdit.rotation[2]);
 			setScalePickerValue(geometryToEdit.scale[0]);
 			setPickerColor(geometryToEdit.color, 'colorPicker');
+			setPickerColor(geometryToEdit.material.ambient, 'geomAmbientPicker');
+			setPickerColor(geometryToEdit.material.diffuse, 'geomDiffusePicker');
+			setPickerColor(geometryToEdit.material.specular, 'geomSpecularPicker');
+			$('shininessTextBox').value = geometryToEdit.material.shininess;
 		}
 	}
 	else if (MODE === DrawMode.MOVE) {
@@ -422,7 +480,11 @@ function onCanvasMouseDown(evt){
 			setPickerValue('yRotPicker','labelYRot', gActiveGeometry.rotation[1]);
 			setPickerValue('zRotPicker','labelZRot', gActiveGeometry.rotation[2]);
 			setPickerValue(gActiveGeometry.scale[0]);
-			setPickerColor(gActiveGeometry.color, 'colorPicker');			
+			setPickerColor(gActiveGeometry.color, 'colorPicker');
+			setPickerColor(gActiveGeometry.material.ambient, 'geomAmbientPicker');
+			setPickerColor(gActiveGeometry.material.diffuse, 'geomDiffusePicker');
+			setPickerColor(gActiveGeometry.material.specular, 'geomSpecularPicker');
+			$('shininessTextBox').value = gActiveGeometry.material.shininess;
 		}
 	}
 
@@ -516,7 +578,7 @@ function render(offline){
 			gShaders.setColor(geometry.color);
 		}
 		else {
-			var color = [geometry.geometryId/255,0,0,1];
+			var color = [geometry.id/255,0,0,1];
 			gShaders.setColor(color);
 		}
 		//gShaders.setCamera(gCamera);
@@ -630,7 +692,7 @@ function Camera(){
 	
 	function init(){
 		me.vMatrix = me.move(me.radius, 
-			me.theta * 180/Math.PI, me.phi * 180/Math.PI);
+			me.longitude * 180/Math.PI, me.latitude * 180/Math.PI);
 		me.pMatrix = me.lense(me.fovy, me.aspect, me.near, me.far);
 	}
 }

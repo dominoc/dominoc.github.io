@@ -78,7 +78,7 @@ void main () {
 <script type="text/javascript" src="../Common/webgl-utils.js"></script>
 <script type="text/javascript" src="../Common/InitShaders.js"></script>
 <script type="text/javascript" src="../Common/MV.js"></script>
-<script type="text/javascript" src="cad3d.js"></script>
+<script type="text/javascript" src="velocam.js"></script>
 <script type="text/javascript" src="../lib/jscolor/jscolor.js"></script>
 <script type="text/javascript" src="../lib/jszip.min.js"></script>
 <script type="text/javascript" src="../lib/FileSaver.js"></script>
@@ -88,9 +88,9 @@ void main () {
 <div>
 <select id="modeCombo">
 	<!--<option value="1">Info</option>-->
-	<!--<option value="2" selected="selected">Draw triangle</option>-->
-	<!--<option value="7">Draw circle</option>-->
-	<option value="3" selected="selected">Draw sphere</option>
+	<option value="2" selected="selected">Draw triangle</option>
+	<option value="7">Draw circle</option>
+	<option value="3">Draw sphere</option>
 	<option value="4">Draw cone</option>
 	<option value="5">Draw cylinder</option>
 	<option value="8">Draw pyramid</option>
@@ -107,48 +107,41 @@ Oops ... your browser doesn't support the HTML5 canvas element
 </div>
 <div id="sidebar">
 	<div>
-		<label>Geometry</label><br />
+		<label>Info</label><br />
 		<textarea readonly id="infoTextArea" cols="30" rows="10">
 		</textarea>
 	</div>
 	<div>
-		Fill color: <input type="text" class="color" value="0f0d52" size="6" id="colorPicker"><br/>
-		X Rotation<input type="range" id="xRotPicker" value=0 min=-360 max=360 step=1/><label id="labelXRot">0</label><br/>
-		Y Rotation<input type="range" id="yRotPicker" value=0 min=-360 max=360 step=1/><label id="labelYRot">0</label><br/>
-		Z Rotation<input type="range" id="zRotPicker" value=0 min=-360 max=360 step=1/><label id="labelZRot">0</label><br/>
-		Scale<input type="range" id="scalePicker" value=10 min=1 max=100 step=1/><label id="labelScale">1</label><br/>
-		Ambient color: <input type="text" class="color" value="ffffff" size="6" id="geomAmbientPicker"><br/>
-		Diffuse color: <input type="text" class="color" value="ffffff" size="6" id="geomDiffusePicker"><br/>
-		Specular color: <input type="text" class="color" value="ffffff" size="6" id="geomSpecularPicker"><br/>
-		Shininess: <input type="number" id="shininessTextBox" style="width:50px" value="100" max="100" step=1/>								
+		<hr/>
+		<label>Camera side top</label><br/>
+		Focal length (mm): <input type="number" id="camSideTopFocalLengthPicker" value="12" min="5" max="100" step="1"/><br/>
+		Sensor width (mm): <input type="number" id="camSideTopSensorWidthPicker" value="23.4" min="5" max="100" step="1"/><br/>
+		Sensor height (mm): <input type="number" id="camSideTopSensorHeightPicker" value="15.6" min="5" max="100" step="1"/><br/>
+		Field of view (deg): <textarea readonly id="camSideTopFOVText" ></textarea><br/>
+		Mount angle (deg): <input type="number" id="camSideTopMountAnglePicker" value="45" min="-90" max="90" step="1"/><br/> 
+	</div>
+	<div>
+		<hr/>
+		<label>Camera side bottom</label><br/>
+		Focal length (mm): <input type="number" id="camSideBotFocalLengthPicker" value="12" min="5" max="100" step="1"/><br/>
+		Sensor width (mm): <input type="number" id="camSideBotSensorWidthPicker" value="23.4" min="5" max="100" step="1"/><br/>
+		Sensor height (mm): <input type="number" id="camSideBotSensorHeightPicker" value="15.6" min="5" max="100" step="1"/><br/>
+		Field of view (deg): <textarea readonly id="camSideBotFOVText" ></textarea><br/>
+		Mount angle (deg): <input type="number" id="camSideBotMountAnglePicker" value="45" min="-90" max="90" step="1"/><br/> 
 	</div>
 	<div>
 		<hr />
-		<label>Camera</label><br />
+		<label>Mounting</label><br/>
+		Height (m): <input type="number" id="mountHeightPicker" value=1.2 min=0 max=10 step=1/><br/>
+		Radius to camera (mm): <input type="number" id="mountRadiusPicker" value=50 min=1 max=100 step=1/><br/>
+	</div>
+	<div>
+		<hr />
+		<label>View</label><br />
 		Latitude: <input type="range" id="camLatPicker" value=45 min=-360 max=360 step=1/><label id="labelCamLatitude">45</label><br/>
 		Longitude: <input type="range" id="camLngPicker" value=45 min=-90 max=90 step=1/><label id="labelCamLongitude">45</label><br/>
 		Near clip: <input type="range" id="nearClipPicker" value=4 min =-10 max=20 step=1/><label id="labelNearClip">4</label><br/>
 		Far clip: <input type="range" id="farClipPicker" value=10 min =-10 max=20 step=1/><label id="labelFarClip">10</label><br/>
-	</div>
-	<div>
-		<hr/>
-		<input type="checkbox" id="light1CheckBox" checked="checked" /><label>Light 1</label><br/>
-		X: <input type="number" id="light1X" style="width:50px" value=1 step=1/>
-		Y: <input type="number" id="light1Y" style="width:50px" value=1 step=1/>
-		Z: <input type="number" id="light1Z" style="width:50px" value=1 step=1/><br/>
-		Ambient color: <input type="text" class="color" value="ffffff" size="6" id="light1AmbientPicker"><br/>
-		Diffuse color: <input type="text" class="color" value="ffffff" size="6" id="light1DiffusePicker"><br/>
-		Specular color: <input type="text" class="color" value="ffffff" size="6" id="light1SpecularPicker"><br/>						
-	</div>
-	<div>
-		<hr/>
-		<input type="checkbox" id="light2CheckBox" checked="checked" /><label>Light 2</label><br/>
-		X: <input type="number" id="light2X" style="width:50px" value=1 step=1/>
-		Y: <input type="number" id="light2Y" style="width:50px" value=1 step=1/>
-		Z: <input type="number" id="light2Z" style="width:50px" value=1 step=1/><br/>
-		Ambient color: <input type="text" class="color" value="ffffff" size="6" id="light2AmbientPicker"><br/>
-		Diffuse color: <input type="text" class="color" value="ffffff" size="6" id="light2DiffusePicker"><br/>
-		Specular color: <input type="text" class="color" value="ffffff" size="6" id="light2SpecularPicker"><br/>								
 	</div>
 	<div>
 		<hr/>

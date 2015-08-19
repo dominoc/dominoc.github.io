@@ -7,7 +7,6 @@ function Geometry(shader, id){
 	this.length = 0;
 	this.color = [1,1,1];
 	this.points = [];
-	this.normals = [];
 	this.translation = [0,0,0];
 	this.rotation = [0,0,0];
 	this.scale = [1,1,1];
@@ -106,9 +105,7 @@ function Sphere(shader, id, origin, material){
 			var x = cosPhi * sinTheta;
 			var y = cosTheta;
 			var z = sinPhi * sinTheta;
-			
-			this.normals.push(x,y,z);
-				
+							
 			var point = vec3(
 				mRadius * x, 
 				mRadius * y, 
