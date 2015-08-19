@@ -27,6 +27,7 @@ var COLORS = {
 var MAX_POINTS = Math.pow(2,16);
 var GEOMETRIES = [];
 var WIDGETS = [];
+var LIGHTS = [];
 var gShaders;
 var gCamera;
 var gActiveGeometry = undefined;
@@ -55,7 +56,6 @@ function init() {
 	gShaders = new Shaders(gl, MAX_POINTS);
 	gShaders.setCamera(gCamera);
 
-	displayXYZReference();
 
 	$('colorPicker').addEventListener('change', onColorPickerChange);
 	$('scalePicker').addEventListener('change', onScalePickerChange);
@@ -79,6 +79,11 @@ function init() {
 	$('light2CheckBox').addEventListener('change', onLight2CheckBoxChange);
 	$('saveButton').addEventListener('click', onSaveButtonClick);
 	$('clearButton').addEventListener('click', onClearButtonClick);
+	
+	LIGHTS = createLights();
+	console.log(LIGHTS);
+	displayXYZReference();
+
 	render();
 }
 function onLight1CheckBoxChange(evt){
@@ -262,6 +267,30 @@ function onModeComboChange(evt){
 	else if (MODE === DrawMode.MOVE){
 		status.innerHTML = 'Press down/drag/roll wheel on a geometry to move in 3D space';
 	}
+}
+function createLights(){
+	var lights = [];
+	var light1 = new Light(1);
+	var x = Number($('light1X').value);
+	var y = Number($('light1Y').value);
+	var z = Number($('light1Z').value);
+	var w = Number($('light1W').value);
+	light1.position = [x, y, z, w];
+	// light1.ambient = getPickerColor('xxxPicker');
+	// light1.diffuse = getPickerColor('light1DiffusePicker');
+	// light1.specular = getPickerColor('light1SpecularPicker');
+	lights.push(light1);
+	// var light2 = new Light(2);
+	// x = Number($('light2X').value);
+	// y = Number($('light2Y').value);
+	// z = Number($('light2Z').value);
+	// w = Number($('light2W').value);
+	// light2.position = [x, y, z, w];
+	// light2.ambient = getPickerColor('light2AmbientPicker');
+	// light2.diffuse = getPickerColor('light2DiffusePicker');
+	// light2.specular = getPickerColor('light2SpecularPicker');
+	// lights.push(light2);
+	return lights;
 }
 function displayXYZReference(){
 	var xRefLine = new Line(gShaders, -1, [0,0,0], COLORS.RED);
@@ -713,4 +742,12 @@ Camera.prototype.move = function(radius, lonDeg, latDeg){
 					this.radius*Math.cos(this.longitude));
 	this.vMatrix = lookAt(eye, this.at, this.up);
 	return this.vMatrix;
+}
+function Light (id) {
+	var me = this;
+	this.id = Number(id);
+	this.position = [1,1,1,0];
+	this.ambient = [0.2,0.2,0.2,1];
+	this.diffuse = [1,1,1,1];
+	this.specular = [1,1,1,1];
 }

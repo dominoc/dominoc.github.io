@@ -18,6 +18,11 @@
 <script id="vertex-shader" type="x-shader/x-vertex">
 
 attribute vec4 vPosition;
+attribute vec3 vNormal;
+varying vec4 fColor;
+
+const int cNumLight = 2;
+uniform vec4 uLightPosition[cNumLight];
 
 uniform vec3 theta;
 uniform vec3 uTranslation;
@@ -63,6 +68,21 @@ void main(){
 		0, 0, uScale.x, 0,
 		0, 0, 0, 1
 	);
+	
+	vec3 pos = -(uView * translation * scale * rx * ry * rz * vPosition).xyz;
+	
+	vec3 L[cNumLight];
+	vec3 E[cNumLight];
+	vec3 H[cNumLight];
+	
+	for (int i=0; i<cNumLight; i++) {
+		vec3 light = uLightPosition[i].xyz;
+		L[i] = normalize(light - pos);
+		
+		//
+		//else
+		//	L[i] = normalize(uLightPosition[i].xyz - pos);
+	}
 	gl_Position = uProjection * uView * translation * scale * rx * ry * rz * vPosition;
 
 }
@@ -108,47 +128,49 @@ Oops ... your browser doesn't support the HTML5 canvas element
 <div id="sidebar">
 	<div>
 		<label>Geometry</label><br />
-		<textarea readonly id="infoTextArea" cols="30" rows="10">
+		<textarea readonly id="infoTextArea" cols="30" rows="5">
 		</textarea>
 	</div>
 	<div>
-		Fill color: <input type="text" class="color" value="0f0d52" size="6" id="colorPicker"><br/>
-		X Rotation<input type="range" id="xRotPicker" value=0 min=-360 max=360 step=1/><label id="labelXRot">0</label><br/>
-		Y Rotation<input type="range" id="yRotPicker" value=0 min=-360 max=360 step=1/><label id="labelYRot">0</label><br/>
-		Z Rotation<input type="range" id="zRotPicker" value=0 min=-360 max=360 step=1/><label id="labelZRot">0</label><br/>
-		Scale<input type="range" id="scalePicker" value=10 min=1 max=100 step=1/><label id="labelScale">1</label><br/>
-		Ambient color: <input type="text" class="color" value="ffffff" size="6" id="geomAmbientPicker"><br/>
-		Diffuse color: <input type="text" class="color" value="ffffff" size="6" id="geomDiffusePicker"><br/>
-		Specular color: <input type="text" class="color" value="ffffff" size="6" id="geomSpecularPicker"><br/>
+		Fill color: <input type="text" class="color" value="0f0d52" size="6" id="colorPicker"/><br>
+		X Rotation<input type="range" id="xRotPicker" value=0 min=-360 max=360 step=1/><label id="labelXRot">0</label><br>
+		Y Rotation<input type="range" id="yRotPicker" value=0 min=-360 max=360 step=1/><label id="labelYRot">0</label><br>
+		Z Rotation<input type="range" id="zRotPicker" value=0 min=-360 max=360 step=1/><label id="labelZRot">0</label><br>
+		Scale<input type="range" id="scalePicker" value=10 min=1 max=100 step=1/><label id="labelScale">1</label><br>
+		Ambient color: <input type="text" class="color" value="ffffff" size="6" id="geomAmbientPicker"/><br>
+		Diffuse color: <input type="text" class="color" value="ffffff" size="6" id="geomDiffusePicker"/><br>
+		Specular color: <input type="text" class="color" value="ffffff" size="6" id="geomSpecularPicker"/><br>
 		Shininess: <input type="number" id="shininessTextBox" style="width:50px" value="100" max="100" step=1/>								
 	</div>
 	<div>
-		<hr />
-		<label>Camera</label><br />
-		Latitude: <input type="range" id="camLatPicker" value=45 min=-360 max=360 step=1/><label id="labelCamLatitude">45</label><br/>
-		Longitude: <input type="range" id="camLngPicker" value=45 min=-90 max=90 step=1/><label id="labelCamLongitude">45</label><br/>
-		Near clip: <input type="range" id="nearClipPicker" value=4 min =-10 max=20 step=1/><label id="labelNearClip">4</label><br/>
-		Far clip: <input type="range" id="farClipPicker" value=10 min =-10 max=20 step=1/><label id="labelFarClip">10</label><br/>
-	</div>
-	<div>
-		<hr/>
-		<input type="checkbox" id="light1CheckBox" checked="checked" /><label>Light 1</label><br/>
-		X: <input type="number" id="light1X" style="width:50px" value=1 step=1/>
-		Y: <input type="number" id="light1Y" style="width:50px" value=1 step=1/>
-		Z: <input type="number" id="light1Z" style="width:50px" value=1 step=1/><br/>
+		<hr>
+		<input type="checkbox" id="light1CheckBox" checked="checked" /><label>Light 1</label><br>
+		X: <input type="number" id="light1X" style="width:45px" value=1 step=1/>
+		Y: <input type="number" id="light1Y" style="width:45px" value=1 step=1/>
+		Z: <input type="number" id="light1Z" style="width:45px" value=1 step=1/>
+		W: <input type="number" id="light1W" style="width:45px" value=1 step=1/><br>
 		Ambient color: <input type="text" class="color" value="ffffff" size="6" id="light1AmbientPicker"><br/>
-		Diffuse color: <input type="text" class="color" value="ffffff" size="6" id="light1DiffusePicker"><br/>
-		Specular color: <input type="text" class="color" value="ffffff" size="6" id="light1SpecularPicker"><br/>						
+		Diffuse color: <input type="text" class="color" value="ffffff" size="6" id="light1DiffusePicker"><br>
+		Specular color: <input type="text" class="color" value="ffffff" size="6" id="light1SpecularPicker"><br>						
 	</div>
 	<div>
 		<hr/>
 		<input type="checkbox" id="light2CheckBox" checked="checked" /><label>Light 2</label><br/>
-		X: <input type="number" id="light2X" style="width:50px" value=1 step=1/>
-		Y: <input type="number" id="light2Y" style="width:50px" value=1 step=1/>
-		Z: <input type="number" id="light2Z" style="width:50px" value=1 step=1/><br/>
+		X: <input type="number" id="light2X" style="width:45px" value=1 step=1/>
+		Y: <input type="number" id="light2Y" style="width:45px" value=1 step=1/>
+		Z: <input type="number" id="light2Z" style="width:45px" value=1 step=1/>
+		W: <input type="number" id="light2W" style="width:45px" value=1 step=1/><br/>		
 		Ambient color: <input type="text" class="color" value="ffffff" size="6" id="light2AmbientPicker"><br/>
 		Diffuse color: <input type="text" class="color" value="ffffff" size="6" id="light2DiffusePicker"><br/>
 		Specular color: <input type="text" class="color" value="ffffff" size="6" id="light2SpecularPicker"><br/>								
+	</div>
+	<div>
+		<hr>
+		<label>Camera</label><br>
+		Latitude: <input type="range" id="camLatPicker" value=45 min=-360 max=360 step=1/><label id="labelCamLatitude">45</label><br>
+		Longitude: <input type="range" id="camLngPicker" value=45 min=-90 max=90 step=1/><label id="labelCamLongitude">45</label><br>
+		Near clip: <input type="range" id="nearClipPicker" value=4 min =-10 max=20 step=1/><label id="labelNearClip">4</label><br>
+		Far clip: <input type="range" id="farClipPicker" value=10 min =-10 max=20 step=1/><label id="labelFarClip">10</label><br>
 	</div>
 	<div>
 		<hr/>
