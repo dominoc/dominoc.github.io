@@ -22,7 +22,12 @@ attribute vec3 vNormal;
 varying vec4 fColor;
 
 const int cNumLight = 2;
-uniform vec4 uLightPosition[cNumLight];
+
+uniform vec4 uLightPosition[cNumLight],
+				uAmbientProduct[cNumLight], 
+				uDiffuseProduct[cNumLight], 
+				uSpecularProduct[cNumLight];
+uniform float uShininess;
 
 uniform vec3 theta;
 uniform vec3 uTranslation;
@@ -71,18 +76,27 @@ void main(){
 	
 	vec3 pos = -(uView * translation * scale * rx * ry * rz * vPosition).xyz;
 	
-	vec3 L[cNumLight];
-	vec3 E[cNumLight];
-	vec3 H[cNumLight];
-	
+	vec4 minVec4 = vec4(0,0,0,1);
+	vec4 maxVec4 = vec4(1,1,1,1);	
 	for (int i=0; i<cNumLight; i++) {
 		vec3 light = uLightPosition[i].xyz;
-		L[i] = normalize(light - pos);
-		
-		//
-		//else
-		//	L[i] = normalize(uLightPosition[i].xyz - pos);
+		vec3 L = normalize(light - pos);
+		vec3 E = normalize(-pos);
+		vec3 H = normalize(L + E);
+		vec4 NN = vec4(vNormal,0);
+		vec3 N = normalize((uView*NN).xyz);
+		vec4 ambient = uAmbientProduct[i];
+		float Kd = max(dot(L,N), 0.0);
+		vec4 diffuse = Kd*uDiffuseProduct[i];
+		float Ks = pow(max(dot(N,H), 0.0), uShininess);
+		vec4 specular = Ks * uSpecularProduct[i];
+		if (dot(L,N) < 0.0) {
+			specular = vec4(0,0,0,1);
+		}
+		fColor = fColor + ambient + diffuse + specular;
+		fColor.a = 1.0;
 	}
+	clamp(fColor, minVec4, maxVec4);
 	gl_Position = uProjection * uView * translation * scale * rx * ry * rz * vPosition;
 
 }
@@ -92,7 +106,7 @@ precision mediump float;
 varying vec4 fColor;
 uniform vec4 uColor;
 void main () {
-	gl_FragColor = uColor;
+	gl_FragColor = fColor;
 }
 </script>
 <script type="text/javascript" src="../Common/webgl-utils.js"></script>

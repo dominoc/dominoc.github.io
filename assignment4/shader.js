@@ -8,8 +8,13 @@ Shaders = function (gl, maxPoints) {
 	this.uColor;
 	this.uScale;
 	this.uLightPosition;
+	this.uAmbientProduct;
+	this.uDiffuseProduct;
+	this.uSpecularProduct;
+	this.uShininess;
 	this.bufferId;
 	this.vPosition;
+	this.vNormal;
 	this.dataLength = 0;
 	this.gl = gl;
 	this.maxPoints = maxPoints;
@@ -35,20 +40,38 @@ Shaders = function (gl, maxPoints) {
 			me.gl.FLOAT, false, 0, 0);
 		me.gl.enableVertexAttribArray(me.vPosition);
 		
+		me.vNormal = me.gl.getAttribLocation(program, "vNormal");
+		me.gl.vertexAttribPointer(me.vNormal, numComponents,
+			me.gl.FLOAT, false, 0, 0);
+		me.gl.enableVertexAttribArray(me.vNormal);
+		
 		me.uView = me.gl.getUniformLocation(program, "uView");
 		me.uProjection = me.gl.getUniformLocation(program, "uProjection");
-		me.uLightPosition = me.gl.getUniformLocation(program, "uLightPosition");		
+		me.uLightPosition = me.gl.getUniformLocation(program, "uLightPosition");
+		me.uAmbientProduct = me.gl.getUniformLocation(program, "uAmbientProduct");
+		me.uDiffuseProduct = me.gl.getUniformLocation(program, "uDiffuseProduct");
+		me.uSpecularProduct = me.gl.getUniformLocation(program, "uSpecularProduct");
+		me.uShininess = me.gl.getUniformLocation(program, "uShininess");		
 	}
 }
 Shaders.prototype.setLightPosition = function(positions){
 	gl.uniform4fv(this.uLocationPosition, flatten(positions));
 }
+Shaders.prototype.setAmbientProduct = function(ambientProduct){
+	gl.uniform4fv(this.uAmbientProduct, flatten(ambientProduct));
+}
+Shaders.prototype.setDiffuseProduct = function(diffuseProduct){
+	gl.uniform4fv(this.uDiffuseProduct, flatten(diffuseProduct));
+}
+Shaders.prototype.setSpecularProduct = function(specularProduct){
+	gl.uniform4fv(this.uSpecularProduct, flatten(specularProduct));
+}
+Shaders.prototype.setShininess = function(shininess){
+	gl.uniform1f(this.uShininess, shininess);
+}
 Shaders.prototype.setCamera = function (camera){
 	var vMatrix = camera.vMatrix;
 	var pMatrix = camera.pMatrix;
-	if (DEBUG){
-		console.log(vMatrix, pMatrix);
-	}
 	gl.uniformMatrix4fv(this.uView, false, flatten(vMatrix));
 	gl.uniformMatrix4fv(this.uProjection, false, flatten(pMatrix));
 }

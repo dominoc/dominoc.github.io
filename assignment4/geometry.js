@@ -34,7 +34,7 @@ Geometry.prototype.setSpecular = function(specular){
 	this.material.specular = specular;
 }
 Geometry.prototype.setShininess = function(shininess){
-	this.material.shininess = shininess;
+	this.material.shininess = Number(shininess);
 }
 Geometry.prototype.setScale = function(scale){
 	this.scale = scale;

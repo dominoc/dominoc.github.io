@@ -81,28 +81,33 @@ function init() {
 	$('clearButton').addEventListener('click', onClearButtonClick);
 	
 	LIGHTS = createLights();
-	console.log(LIGHTS);
+	// console.log(LIGHTS);
 	displayXYZReference();
 
 	render();
 }
 function onLight1CheckBoxChange(evt){
 	var enabled = evt.target.checked;
+	LIGHTS[0].on = enabled;
+	console.log(LIGHTS);
 	$('light1X').disabled = !enabled;
 	$('light1Y').disabled = !enabled;
 	$('light1Z').disabled = !enabled;
 	$('light1AmbientPicker').disabled = !enabled;
 	$('light1DiffusePicker').disabled = !enabled;
 	$('light1SpecularPicker').disabled = !enabled;
+	render();
 }
 function onLight2CheckBoxChange(evt){
 	var enabled = evt.target.checked;
+	LIGHTS[1].on = enabled;
 	$('light2X').disabled = !enabled;
 	$('light2Y').disabled = !enabled;
 	$('light2Z').disabled = !enabled;
 	$('light2AmbientPicker').disabled = !enabled;
 	$('light2DiffusePicker').disabled = !enabled;
 	$('light2SpecularPicker').disabled = !enabled;
+	render();
 }
 function onCamLatPickerChange(evt){
 	var label = $('labelCamLatitude');
@@ -432,7 +437,7 @@ function onCanvasMouseDown(evt){
 		ambient : ambient,
 		diffuse : diffuse,
 		specular : specular,
-		shininess : shininess
+		shininess : Number(shininess)
 	};
 
 	var geometryId = GEOMETRIES.length+1;
@@ -614,13 +619,36 @@ function render(offline){
 	
 	GEOMETRIES.forEach(function(geometry){
 		if (offline === false){
+			var lightPositions = [];
+			var ambientProducts = [];
+			var diffuseProducts = [];
+			var specularProducts = [];
 			for (var i=0; i<LIGHTS.length; i++){
 				var light = LIGHTS[i];
-				var ambientProduct = mult(light.ambient, geometry.material.ambient);
-				var diffuseProduct 				
+				if (!light.on){
+				//TODO	
+				}
+				lightPositions.push(
+					light.position
+				);
+				ambientProducts.push(
+					mult(light.ambient, geometry.material.ambient)
+				);
+				diffuseProducts.push(
+					mult(light.diffuse, geometry.material.diffuse)
+				);
+				specularProducts.push(
+					mult(light.specular, geometry.material.specular)
+				);
 			}
-			
-			gShaders.setColor(geometry.color);
+			// console.log(lightPositions.length);
+			// gShaders.setNumLight(lightPositions.length);
+			gShaders.setLightPosition(lightPositions);
+			gShaders.setAmbientProduct(ambientProducts);
+			gShaders.setDiffuseProduct(diffuseProducts);
+			gShaders.setSpecularProduct(specularProducts);
+			gShaders.setShininess(geometry.material.shininess);	
+			// gShaders.setColor(geometry.color);
 		}
 		else {
 			var color = [geometry.id/255,0,0,1];
@@ -690,6 +718,7 @@ Camera.prototype.move = function(radius, lonDeg, latDeg){
 }
 function Light (id) {
 	var me = this;
+	this.on = true;
 	this.id = Number(id);
 	this.position = [1,1,1,0];
 	this.ambient = [0.2,0.2,0.2,1];
