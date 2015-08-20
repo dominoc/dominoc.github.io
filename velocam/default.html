@@ -8,143 +8,55 @@
 		}
 		#main {
 			float: left;
-			width: 600px;			
+			width: 300px;			
 		}
 		#sidebar {
 			float: right;
 		}
 		
 	</style>
-<script id="vertex-shader" type="x-shader/x-vertex">
-
-attribute vec4 vPosition;
-
-uniform vec3 theta;
-uniform vec3 uTranslation;
-uniform vec3 uScale;
-uniform vec3 uRotation;
-uniform mat4 uView;
-uniform mat4 uProjection;
-
-void main(){
-	vec3 angles = radians(uRotation);
-	vec3 c = cos(angles);
-	vec3 s = sin(angles);
-	
-	mat4 rx = mat4 (
-		1, 0, 0, 0,
-		0, c.x, s.x, 0,
-		0, -s.x, c.x, 0.,
-		0, 0, 0, 1
-	);
-	
-	mat4 ry = mat4 (
-		c.y, 0, -s.y, 0,
-		0, 1, 0, 0,
-		s.y, 0, c.y, 0,
-		0, 0, 0, 1
-	);
-	
-	mat4 rz = mat4 (
-		c.z, s.z, 0, 0,
-		-s.z, c.z, 0, 0,
-		0, 0, 1, 0,
-		0, 0, 0, 1
-	);
-	mat4 translation = mat4 (
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		uTranslation.x, uTranslation.y, uTranslation.z, 1
-	);
-	mat4 scale = mat4 (
-		uScale.x, 0, 0, 0,
-		0, uScale.x, 0, 0,
-		0, 0, uScale.x, 0,
-		0, 0, 0, 1
-	);
-	gl_Position = uProjection * uView * translation * scale * rx * ry * rz * vPosition;
-
-}
-</script>
-<script id="fragment-shader" type="x-shader/x-fragment">
-precision mediump float;
-varying vec4 fColor;
-uniform vec4 uColor;
-void main () {
-	gl_FragColor = uColor;
-}
-</script>
-<script type="text/javascript" src="../Common/webgl-utils.js"></script>
-<script type="text/javascript" src="../Common/InitShaders.js"></script>
-<script type="text/javascript" src="../Common/MV.js"></script>
 <script type="text/javascript" src="velocam.js"></script>
 <script type="text/javascript" src="../lib/jscolor/jscolor.js"></script>
 <script type="text/javascript" src="../lib/jszip.min.js"></script>
 <script type="text/javascript" src="../lib/FileSaver.js"></script>
-<script type="text/javascript" src="geometry.js"></script>
+<script type="text/javascript" src="sylvester.js"></script>
 </head>
 <body>
 <div>
-<select id="modeCombo">
-	<!--<option value="1">Info</option>-->
-	<option value="2" selected="selected">Draw triangle</option>
-	<option value="7">Draw circle</option>
-	<option value="3">Draw sphere</option>
-	<option value="4">Draw cone</option>
-	<option value="5">Draw cylinder</option>
-	<option value="8">Draw pyramid</option>
-	<option value="10">Draw cube</option>
-	<option value="9">Edit</option>
-	<option value="6">Move</option>
-</select>
-<label id="statusLabel">Ready</label>
 </div>
 <div id="main">
-<canvas id="gl-canvas" width="600"" height="600">
+<canvas id="gl-canvas" width="200"" height="200">
 Oops ... your browser doesn't support the HTML5 canvas element
 </canvas>
 </div>
 <div id="sidebar">
-	<div>
+	<!--<div>
 		<label>Info</label><br />
 		<textarea readonly id="infoTextArea" cols="30" rows="10">
 		</textarea>
-	</div>
+	</div>-->
 	<div>
-		<hr/>
-		<label>Camera side top</label><br/>
-		Focal length (mm): <input type="number" id="camSideTopFocalLengthPicker" value="12" min="5" max="100" step="1"/><br/>
-		Sensor width (mm): <input type="number" id="camSideTopSensorWidthPicker" value="23.4" min="5" max="100" step="1"/><br/>
-		Sensor height (mm): <input type="number" id="camSideTopSensorHeightPicker" value="15.6" min="5" max="100" step="1"/><br/>
-		Field of view (deg): <textarea readonly id="camSideTopFOVText" ></textarea><br/>
-		Mount angle (deg): <input type="number" id="camSideTopMountAnglePicker" value="45" min="-90" max="90" step="1"/><br/> 
-	</div>
-	<div>
-		<hr/>
-		<label>Camera side bottom</label><br/>
-		Focal length (mm): <input type="number" id="camSideBotFocalLengthPicker" value="12" min="5" max="100" step="1"/><br/>
-		Sensor width (mm): <input type="number" id="camSideBotSensorWidthPicker" value="23.4" min="5" max="100" step="1"/><br/>
-		Sensor height (mm): <input type="number" id="camSideBotSensorHeightPicker" value="15.6" min="5" max="100" step="1"/><br/>
-		Field of view (deg): <textarea readonly id="camSideBotFOVText" ></textarea><br/>
-		Mount angle (deg): <input type="number" id="camSideBotMountAnglePicker" value="45" min="-90" max="90" step="1"/><br/> 
+		<label>Camera</label><br/>
+		Focal length (mm): <input type="number" id="camFocalLengthPicker" value="12" min="5" max="100" step="1"/><br/>
+		Sensor width (mm): <input type="number" id="camSensorWidthPicker" value="23.4" min="5" max="100" step="1"/><br/>
+		Sensor height (mm): <input type="number" id="camSensorHeightPicker" value="15.6" min="5" max="100" step="1"/><br/>
+		Field of view (deg): <textarea readonly id="camFOVText" ></textarea><br/>
 	</div>
 	<div>
 		<hr />
 		<label>Mounting</label><br/>
 		Height (m): <input type="number" id="mountHeightPicker" value=1.2 min=0 max=10 step=1/><br/>
+		Angle to camera (deg): <input type="number" id="mountAnglePicker" value="45" min="-90" max="90" step="1"/><br/> 
 		Radius to camera (mm): <input type="number" id="mountRadiusPicker" value=50 min=1 max=100 step=1/><br/>
 	</div>
 	<div>
 		<hr />
-		<label>View</label><br />
-		Latitude: <input type="range" id="camLatPicker" value=45 min=-360 max=360 step=1/><label id="labelCamLatitude">45</label><br/>
-		Longitude: <input type="range" id="camLngPicker" value=45 min=-90 max=90 step=1/><label id="labelCamLongitude">45</label><br/>
-		Near clip: <input type="range" id="nearClipPicker" value=4 min =-10 max=20 step=1/><label id="labelNearClip">4</label><br/>
-		Far clip: <input type="range" id="farClipPicker" value=10 min =-10 max=20 step=1/><label id="labelFarClip">10</label><br/>
+		<label>Target</label><br />
+		Distance (m): <input type="number" id="targetDistancePicker" value=45 min=0 max=360 step=1/><br/>
 	</div>
 	<div>
 		<hr/>
+		<button type="button" id="captureButton">Capture</button>
 		<button type="button" id="saveButton">Save</button>
 		<button type="button" id="clearButton">Clear</button>		
 	</div>
