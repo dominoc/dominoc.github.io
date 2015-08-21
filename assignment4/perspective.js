@@ -20,15 +20,25 @@ var colorsArray = [];
 var normalsArray = [];
 
 var vertices = [
-    vec4(-0.5, -0.5,  1.5, 1.0),
-    vec4(-0.5,  0.5,  1.5, 1.0),
-    vec4(0.5,  0.5,  1.5, 1.0),
-    vec4(0.5, -0.5,  1.5, 1.0),
-    vec4(-0.5, -0.5, 0.5, 1.0),
-    vec4(-0.5,  0.5, 0.5, 1.0),
-    vec4(0.5,  0.5, 0.5, 1.0),
-    vec4( 0.5, -0.5, 0.5, 1.0)
+    vec3(-0.5, -0.5,  1.5),
+    vec3(-0.5,  0.5,  1.5),
+    vec3(0.5,  0.5,  1.5),
+    vec3(0.5, -0.5,  1.5),
+    vec3(-0.5, -0.5, 0.5),
+    vec3(-0.5,  0.5, 0.5),
+    vec3(0.5,  0.5, 0.5),
+    vec3( 0.5, -0.5, 0.5)
 ];
+// var vertices = [
+//     vec4(-0.5, -0.5,  1.5, 1.0),
+//     vec4(-0.5,  0.5,  1.5, 1.0),
+//     vec4(0.5,  0.5,  1.5, 1.0),
+//     vec4(0.5, -0.5,  1.5, 1.0),
+//     vec4(-0.5, -0.5, 0.5, 1.0),
+//     vec4(-0.5,  0.5, 0.5, 1.0),
+//     vec4(0.5,  0.5, 0.5, 1.0),
+//     vec4( 0.5, -0.5, 0.5, 1.0)
+// ];
 
 var vertexColors = [
     vec4( 0.0, 0.0, 0.0, 1.0 ),  // black
@@ -106,7 +116,7 @@ function colorCube()
     quad( 5, 4, 0, 1 );
 }
 /////////////////////////////
-var gridVertices = [
+var gridVertices = [  
     vec4(-10,0,0,1), // x
     vec4(10,0,0,1),
     vec4(0,-10,0,1), // y
@@ -179,7 +189,7 @@ window.onload = function init() {
     gl.bufferData( gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW );
 
     var vPosition = gl.getAttribLocation( program, "vPosition" );
-    gl.vertexAttribPointer( vPosition, 4, gl.FLOAT, false, 0, 0 );
+    gl.vertexAttribPointer( vPosition, 3, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vPosition );
 
     var nBuffer = gl.createBuffer();

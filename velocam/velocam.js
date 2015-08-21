@@ -45,7 +45,7 @@ function onCamSensorHeightPickerChange(evt){
 	var sensorHeight = Number($('camSensorHeightPicker').value);
 	if (sensorHeight > 0 && gCamera){
 		gCamera.setSensorHeight(sensorHeight);
-		var fov = gCamera.calcFieldOfView();
+		var fov = gCamera.fov();
 		$('camFOVText').innerHTML = fov.horizontal + "\n" +
 			fov.vertical;
 	}		
@@ -54,7 +54,7 @@ function onCamSensorWidthPickerChange(evt){
 	var sensorWidth = Number($('camSensorWidthPicker').value);
 	if (sensorWidth > 0 && gCamera){
 		gCamera.setSensorWidth(sensorWidth);
-		var fov = gCamera.calcFieldOfView();
+		var fov = gCamera.fov();
 		$('camFOVText').innerHTML = fov.horizontal + "\n" +
 			fov.vertical;
 	}	
@@ -63,7 +63,7 @@ function onCamFocalLengthPickerChange(evt){
 	var focalLength = Number($('camFocalLengthPicker').value);
 	if (focalLength > 0 && gCamera){
 		gCamera.setFocalLength(focalLength);
-		var fov = gCamera.calcFieldOfView();
+		var fov = gCamera.fov();
 		$('camFOVText').innerHTML = fov.horizontal + "\n" +
 			fov.vertical;
 	}
@@ -98,7 +98,7 @@ function VeloCamera(){
 		var angle = angleDeg * Math.PI/180;
 		return adjacent * Math.tan(angle);
 	};
-	this.calcFieldOfView = function(){
+	this.fov = function(){
 		var fov = {};		
 		fov.horizontal = ((180/Math.PI) * 2.0*Math.atan((this.sensorWidth)/(2.0*this.focalLength)));
 		fov.vertical = ((180/Math.PI) * 2.0*Math.atan((this.sensorHeight)/(2.0*this.focalLength)));
@@ -114,7 +114,76 @@ VeloCamera.prototype.setSensorWidth = function(sensorWidth){
 VeloCamera.prototype.setSensorHeight = function(sensorHeight){
 	this.sensorHeight = Number(sensorHeight);
 }
+	// var A = Line.create([0,0],[1,0]);
+	// var P1 = Plane.create([5,0,0], $V([-1,0,0]));
+	
+	// var axis = $V([0,0,1]);
+	// var B = A.rotate(45*Math.PI/180, axis);
+	// // B = A.translate($V([2,0]));
+	// // B.rotate(90*Math.PI/180, axis);
+	
+	// var I = P1.intersectionWith(B);
+	// console.log(I);
 VeloCamera.prototype.captureN = function (mount, targetDistance, maxFrames){
+	var fovh = this.fov().horizontal * Math.PI/180;
+	var fovv = this.fov().vertical * Math.PI/180;
+	var r = mount.radiusToCamera;
+	var h = mount.height;
+	var phi = mount.angleToCamera * Math.PI/180;
+	var d = targetDistance;
+	
+	var horzAbout = $L([r,1,0],[0,1,0]);
+
+	//Lower right	
+	var rayLR = $L([r,0,0],[1,0,0]);
+	rayLR = rayLR.rotate(-fovv/2, $V([r,0,1]));
+	rayLR = rayLR.rotate(fovh/2, horzAbout);
+	rayLR = rayLR.rotate(phi, $V([0,0,1]));
+	rayLR = rayLR.translate($V([h,0,0]));
+
+	//Lower left
+	var rayLL = $L([r,0,0],[1,0,0]);
+	rayLL = rayLL.rotate(-fovv/2, $V([r,0,1]));
+	rayLL = rayLL.rotate(-fovh/2, horzAbout);
+	rayLL = rayLL.rotate(phi, $V([0,0,1]));
+	rayLL = rayLL.translate($V([h,0,0]));
+	
+	//Upper right
+	var rayUR = $L([r,0,0],[1,0,0]);
+	rayUR = rayUR.rotate(fovv/2, $V([r,0,1]));
+	rayUR = rayUR.rotate(fovh/2, horzAbout);
+	rayUR = rayUR.rotate(phi, $V([0,0,1]));
+	rayUR = rayUR.translate($V([h,0,0]));
+
+	//Upper left
+	var rayUL = $L([r,0,0],[1,0,0]);
+	rayUL = rayUL.rotate(fovv/2, $V([r,0,1]));
+	rayUL = rayUL.rotate(-fovh/2, horzAbout);
+	rayUL = rayUL.rotate(phi, $V([0,0,1]));
+	rayUL = rayUL.translate($V([h,0,0]));
+
+	var targetv = $P([d,0,0], $V([-1,0,0]));
+	var vlr = targetv.intersectionWith(rayLR); 	
+	var vll = targetv.intersectionWith(rayLL);
+	var vur = targetv.intersectionWith(rayUR);
+	var vul = targetv.intersectionWith(rayUL);
+
+	var targeth = $P([d,0,0], $V([0,1,0]));
+	var hlr = targeth.intersectionWith(rayLR);
+	var hll = targeth.intersectionWith(rayLL);
+	var hur = targeth.intersectionWith(rayUR);
+	var hul = targeth.intersectionWith(rayUL);
+	
+	console.log(hll, hlr, hul, hur);	
+}
+VeloCamera.prototype.captureN0 = function (mount, targetDistance, maxFrames){
+	var topLeft = new Point();
+	var topRight = new Point();
+	var botLeft = new Point();
+	var botRight = new Point();
+	var midLeft = new Point();
+	var midRight = new Point();
+	
 	var frame = [];
 	var fov = this.calcFieldOfView();
 	var camOrigin = {
@@ -122,7 +191,6 @@ VeloCamera.prototype.captureN = function (mount, targetDistance, maxFrames){
 		y : this.calcSineAngleOpposite(mount.angleToCamera, mount.radiusToCamera),
 		z : 0 
 	};
-// console.log(camOrigin, fov);	
 	var camToTargetHorizontalDistance = targetDistance - camOrigin.x;
 	var camToTargetVerticalDistance = camOrigin.y + mount.height;
 	
@@ -134,7 +202,25 @@ VeloCamera.prototype.captureN = function (mount, targetDistance, maxFrames){
 		this.calcTangentAngleOpposite((mount.angleToCamera-fov.vertical/2),
 			camToTargetHorizontalDistance);
 	
-	var frameLeftZ = camOrigin.z -  
+	//if camera frame is looking horizontally wholly or partially.....	
+	var frameMidTopX;
+	if (frameTopHeight < 0){
+		frameTopHeight = (frameTopHeight < 0) ? 0 : frameTopHeight;
+		frameMidTopX = camOrigin.x +
+			this.calcTangentAngleOpposite((Math.abs(mount.angleToCamera)+fov.vertical/2),
+				camToTargetVerticalDistance);			
+	}
+	var frameMidBotX;
+	if (frameBotHeight < 0){
+		frameBotHeight = (frameBotHeight < 0) ? 0 : frameBotHeight;
+		frameMidBotX = camOrigin.x +
+			this.calcTangentAngleOpposite((90 - Math.abs(mount.angleToCamera)-fov.vertical/2),
+				camToTargetVerticalDistance);	
+	}
+	
+	
+	////////
+	//var frameLeftZ = camOrigin.z -  
 		this.calcTangentAngleOpposite(fov.vertical/2, 
 			camToTargetHorizontalDistance);
 	
@@ -142,19 +228,46 @@ VeloCamera.prototype.captureN = function (mount, targetDistance, maxFrames){
 		this.calcTangentAngleOpposite(fov.vertical/2, 
 			camToTargetHorizontalDistance);
 
-	if (frameBotHeight < 0){
-		frameBotHeight = (frameBotHeight < 0) ? 0 : frameBotHeight;
-		var frameBotX = camOrigin.x +
-			this.calcTangentAngleOpposite((90 - Math.abs(mount.angleToCamera)-fov.vertical/2),
-				camToTargetVerticalDistance);	
+	if (frameTopHeight <= 0 && frameBotHeight <= 0){
+		topLeft.x = frameMidTopX;
+		topLeft.z = 0;
+		topRight.x = frameRightZ;
+		topRight.z = 0;
+		// botRight.x = 
 	}
-	if (frameTopHeight < 0){
-		frameTopHeight = (frameTopHeight < 0) ? 0 : frameTopHeight;
-		var frameTopX = camOrigin.x +
-			this.calcTangentAngleOpposite((90 - Math.abs(mount.angleToCamera)+fov.vertical/2),
-				camToTargetVerticalDistance);					
+	else if (frameTopHeight >= 0 && frameBotHeight <=0){
+		topLeft.x = frameLeftZ;
+		topLeft.z = frameTopHeight;
+		topRight.x = frameRightZ;
+		topRight.z = frameTopHeight;
+		midRight.x = frameRightZ;
+		midRight.z = 0;
+		botRight.x = frameMidBotX;
+		botRight.z = 0;
+		botLeft.x = frameMidBotX;
+		botLeft.z = 0;
+		midLeft.x = frameLeftZ;
+		midLeft.y = 0;		
+	}
+	else if (frameTopHeight > 0 && frameBotHeight > 0){
+		topLeft.x = frameLeftZ;
+		topLeft.z = frameTopHeight;
+		topRight.x = frameRightZ;
+		topRight.z = frameTopHeight;
+		botRight.x = frameRightZ;
+		botRight.z = frameBotHeight;
+		botLeft.x = frameLeftZ;
+		botLeft.z = frameBotHeight;		
 	}
 
-	console.log(frameTopHeight, frameBotHeight, frameLeftZ, frameRightZ);
+	frame.push(topLeft, topRight);
+	frame.push(botRight, botLeft);
+		
+	console.log(frame);
 	
+}
+function Point (){
+	this.x = 0;
+	this.y = 0;
+	this.z = 0;
 }

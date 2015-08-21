@@ -13,9 +13,11 @@ Shaders = function (gl, maxPoints) {
 	this.uSpecularProduct;
 	this.uShininess;
 	this.bufferId;
+	this.normalBufferId;
 	this.vPosition;
 	this.vNormal;
 	this.dataLength = 0;
+	this.normalDataLength = 0;
 	this.gl = gl;
 	this.maxPoints = maxPoints;
 	
@@ -40,6 +42,11 @@ Shaders = function (gl, maxPoints) {
 			me.gl.FLOAT, false, 0, 0);
 		me.gl.enableVertexAttribArray(me.vPosition);
 		
+		me.normalBufferId = me.gl.createBuffer();
+		me.gl.bindBuffer (me.gl.ARRAY_BUFFER, me.normalBufferId);
+		me.gl.bufferData (me.gl.ARRAY_BUFFER, 3*4*me.maxPoints,
+			me.gl.STATIC_DRAW);
+			
 		me.vNormal = me.gl.getAttribLocation(program, "vNormal");
 		me.gl.vertexAttribPointer(me.vNormal, numComponents,
 			me.gl.FLOAT, false, 0, 0);
@@ -96,3 +103,13 @@ Shaders.prototype.fillVertexData = function (data, offset, length){
 Shaders.prototype.getDataLength = function() {
 	return this.dataLength;
 }
+Shaders.prototype.fillNormalData = function (data, offset, length){
+	this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.normalBufferId);
+	var offsetBytes = offset * 3 * 4;
+	this.gl.bufferSubData(this.gl.ARRAY_BUFFER, offsetBytes, data);
+	this.normalDataLength += length;
+}
+Shaders.prototype.getNormalDataLength = function() {
+	return this.dataLength;
+}
+

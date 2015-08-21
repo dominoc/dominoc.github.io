@@ -91,6 +91,7 @@ function Sphere(shader, id, origin, material){
 	var mRadius = 0.3;
 	this.radius = mRadius;
 	var points = [];
+	var normals = [];
 	this.translation = origin;
 	this.color = material.diffuse;
 	this.material = material;
@@ -107,7 +108,7 @@ function Sphere(shader, id, origin, material){
 			var y = cosTheta;
 			var z = sinPhi * sinTheta;
 			
-			this.normals.push(x,y,z);
+			normals.push(x,y,z);
 				
 			var point = vec3(
 				mRadius * x, 
@@ -131,11 +132,14 @@ function Sphere(shader, id, origin, material){
 		}
 	for (var i=0; i< pointIndexes.length; i++){
 		this.points.push(points[pointIndexes[i]]);
+		this.normals.push(normals[pointIndexes[i]]);
 	}
 	this.start = shader.getDataLength();
 	this.shader.fillVertexData(flatten(this.points), shader.getDataLength(),
 		this.points.length);
 	this.length = this.points.length;
+	this.shader.fillNormalData(flatten(this.normals), shader.getNormalDataLength(),
+		this.normals.length);
 			
 	if (DEBUG)
 		console.log(this);
