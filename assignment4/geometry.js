@@ -62,26 +62,6 @@ function GCreateNgon (n, startAngle, r1) {
 	}
 	return vertices;
 }
-function Triangle(shader, id, origin, material){
-	Geometry.call(this, shader, id);
-	this.desc = "Triangle";
-	this.points = [
-		vec3(-0.1, -0.1, 0),
-		vec3(0, 0.1, 0),
-		vec3(0.1, -0.1, 0)		
-	];
-	this.color = material.diffuse;
-	this.material = material;
-	this.translation = origin;
-	this.start = this.shader.getDataLength();
-	this.shader.fillVertexData(flatten(this.points), shader.getDataLength(),
-		this.points.length);
-	this.length = this.points.length;
-	if (DEBUG)
-		console.log(this);
-}
-Triangle.prototype = Object.create(Geometry.prototype);
-Triangle.prototype.constructor = Triangle;
 
 function Sphere(shader, id, origin, material){
 	Geometry.call(this, shader, id);
@@ -147,38 +127,68 @@ function Sphere(shader, id, origin, material){
 Sphere.prototype = Object.create(Geometry.prototype);
 Sphere.prototype.constructor = Sphere;
 
-function Circle (shader, id, origin, material){
+function ShadedSphere (shader, id, origin, material){
 	Geometry.call(this, shader, id);
-	this.desc = "Circle";
+	var me = this;
+	this.desc = "ShadedSphere";
 	this.translation = origin;
 	this.color = material.diffuse;
 	this.material = material;
-	var mRadius = 0.3;
-	var mSides = 20;
-	var mStartAngle = 0;
-	var vertices = GCreateNgon(mSides, mStartAngle, mRadius);
-	for (var side = 0; side < (mSides - 1); side++){
-		var a = vec3(0,0,0);
-		var b = vec3(vertices[side+1].x, vertices[side+1].y);
-		var c = vec3(vertices[side].x, vertices[side].y);
-		this.points.push(a, b, c);
+	var va = vec3(0,0,-1);
+	var vb = vec3(0,0.942809, 0.333333);
+	var vc = vec3(-0.816497, -0.471405, 0.333333);
+	var vd = vec3(0.816497, -0.471405, 0.333333);
+	var index = 0;
+	var numTimesToSubdivide = 3;
+	
+	tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
+ 
+	function triangle(a,b,c){
+		me.points.push(a,b,c);
+	    me.normals.push(a[0],a[1], a[2]);
+    	me.normals.push(b[0],b[1], b[2]);
+     	me.normals.push(c[0],c[1], c[2]);
+		index += 3;
 	}
-	this.points.push(
-		vec3(0,0,0),
-		vec3(vertices[0].x, vertices[0].y, 0),
-		vec3(vertices[vertices.length-1].x, vertices[vertices.length-1].y, 0)
-	);
-	this.translation = origin;
-	this.start = this.shader.getDataLength();
-	this.shader.fillVertexData(flatten(this.points), this.shader.getDataLength(),
+	function divideTriangle(a,b,c,count){
+		if ( count > 0 ) {
+	
+			var ab = mix( a, b, 0.5);
+			var ac = mix( a, c, 0.5);
+			var bc = mix( b, c, 0.5);
+	
+			ab = normalize(ab, true);
+			ac = normalize(ac, true);
+			bc = normalize(bc, true);
+	
+			divideTriangle( a, ab, ac, count - 1 );
+			divideTriangle( ab, b, bc, count - 1 );
+			divideTriangle( bc, c, ac, count - 1 );
+			divideTriangle( ab, bc, ac, count - 1 );
+		}
+		else {
+			triangle( a, b, c );
+		}			
+	}
+	function tetrahedron(a, b, c, d, n) {
+		divideTriangle(a, b, c, n);
+		divideTriangle(d, c, b, n);
+		divideTriangle(a, d, b, n);
+		divideTriangle(a, c, d, n);
+	}
+	this.start = shader.getDataLength();
+	this.shader.fillVertexData(flatten(this.points), shader.getDataLength(),
 		this.points.length);
 	this.length = this.points.length;
+	this.shader.fillNormalData(flatten(this.normals), shader.getNormalDataLength(),
+		this.normals.length);
+			
 	if (DEBUG)
-		console.log(this);		
+		console.log(this);
 	
 }
-Circle.prototype = Object.create(Geometry.prototype);
-Circle.prototype.constructor = Circle;
+ShadedSphere.prototype = Object.create(Geometry.prototype);
+ShadedSphere.prototype.constructor = ShadedSphere;
 
 function Cone(shader, id, origin, material, sides, desc){
 	Geometry.call(this, shader, id);

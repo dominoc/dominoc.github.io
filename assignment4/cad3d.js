@@ -66,6 +66,8 @@ function init() {
 	$('geomDiffusePicker').addEventListener('change', onGeomDiffusePickerChange);
 	$('camLatPicker').addEventListener('change', onCamLatPickerChange);
 	$('camLngPicker').addEventListener('change', onCamLngPickerChange);
+	$('camRadiusPicker').addEventListener('change', onCamRadiusPickerChange);
+	$('camRadiusPicker').addEventListener('keydown', onCamRadiusPickerChange);
 	$('nearClipPicker').addEventListener('change', onNearClipPickerChange);
 	$('farClipPicker').addEventListener('change', onFarClipPickerChange);
 	$('modeCombo').addEventListener('change', onModeComboChange);
@@ -84,6 +86,8 @@ function init() {
 	// console.log(LIGHTS);
 	displayXYZReference();
 
+	onCamRadiusPickerChange(null);
+	
 	render();
 }
 function onLight1CheckBoxChange(evt){
@@ -107,6 +111,14 @@ function onLight2CheckBoxChange(evt){
 	$('light2AmbientPicker').disabled = !enabled;
 	$('light2DiffusePicker').disabled = !enabled;
 	$('light2SpecularPicker').disabled = !enabled;
+	render();
+}
+function onCamRadiusPickerChange(evt){
+	var radius = Number($('camRadiusPicker').value);
+	gCamera.move(radius, 
+		gCamera.longitude*180/Math.PI,
+		gCamera.latitude*180/Math.PI);
+	gShaders.setCamera(gCamera);
 	render();
 }
 function onCamLatPickerChange(evt){
@@ -446,24 +458,8 @@ function onCanvasMouseDown(evt){
 		return;
 	}
 	
-	if (MODE === DrawMode.DRAW_TRIANGLE){
-		// var triangle = new Triangle(gShaders, geometryId,
-		// 		[clipPoint.x, clipPoint.y, 0], color);
-		var triangle = new Triangle(gShaders, geometryId, 
-			[clipPoint.x, clipPoint.y, 0], material);
-		triangle.setScale([scale,scale,scale]);
-		triangle.setRotation([xRot, yRot, zRot]);
-		GEOMETRIES.push(triangle);
-	}
-	else if (MODE === DrawMode.DRAW_CIRCLE){
-		var circle = new Circle(gShaders, geometryId,
-			[clipPoint.x, clipPoint.y, 0], material);
-		circle.setScale([scale,scale,scale]);
-		circle.setRotation([xRot, yRot, zRot]);
-		GEOMETRIES.push(circle);
-	}
-	else if (MODE === DrawMode.DRAW_SPHERE){
-		var sphere = new Sphere(gShaders, geometryId, 
+	if (MODE === DrawMode.DRAW_SPHERE){
+		var sphere = new ShadedSphere(gShaders, geometryId, 
 			[clipPoint.x, clipPoint.y, 0], material);
 		sphere.setScale([scale,scale,scale]);
 		sphere.setRotation([xRot, yRot, zRot]);
@@ -623,7 +619,7 @@ function render(offline){
 			var ambientProducts = [];
 			var diffuseProducts = [];
 			var specularProducts = [];
-			for (var i=0; i<LIGHTS.length; i++){
+			for (var i=0; i<1; i++){
 				var light = LIGHTS[i];
 				if (!light.on){
 				//TODO	
