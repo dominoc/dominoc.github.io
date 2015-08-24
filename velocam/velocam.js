@@ -27,6 +27,7 @@ function init() {
 	$('mountAnglePicker').addEventListener('change', onMountAnglePickerChange);
 	$('mountAnglePicker').addEventListener('keydown', onMountAnglePickerChange);
 	$('captureButton').addEventListener('click', onCaptureButtonClick);
+	$('clearButton').addEventListener('click', onClearButtonClick);
 	
 	gCamera = new VeloCamera();
 
@@ -36,6 +37,9 @@ function init() {
 	onMountAnglePickerChange();
 	onMountHeightPickerChange();
 	onMountRadiusPickerChange();
+}
+function onClearButtonClick(evt){
+	$('outputText').innerHTML = "";
 }
 function onCaptureButtonClick(evt){
 	var targetDistance = Number($('targetDistancePicker').value);
@@ -128,82 +132,82 @@ VeloCamera.prototype.captureN = function (mount, targetDistance, maxFrames, spee
 	var h = mount.height;
 	var phi = mount.angleToCamera * Math.PI/180;
 	var d = targetDistance;
-	
-	var horzAbout = $L([r,1,0],[0,1,0]);
-	var targetv = $P([d,0,0], $V([-1,0,0]));
-	var targeth = $P([d,0,0], $V([0,1,0]));
-
-	for (var i = 0, camz = 0; i < maxFrames; i++, camz += di){
-		console.log(camz);
-	}
-	//Lower right	
-	var rayLR = $L([r,0,0],[1,0,0]);
-	rayLR = rayLR.rotate(-fovv/2, $V([r,0,1]));
-	rayLR = rayLR.rotate(fovh/2, horzAbout);
-	rayLR = rayLR.rotate(phi, $V([0,0,1]));
-	rayLR = rayLR.translate($V([h,0,0]));
-
-	//Lower left
-	var rayLL = $L([r,0,0],[1,0,0]);
-	rayLL = rayLL.rotate(-fovv/2, $V([r,0,1]));
-	rayLL = rayLL.rotate(-fovh/2, horzAbout);
-	rayLL = rayLL.rotate(phi, $V([0,0,1]));
-	rayLL = rayLL.translate($V([h,0,0]));
-	
-	//Upper right
-	var rayUR = $L([r,0,0],[1,0,0]);
-	rayUR = rayUR.rotate(fovv/2, $V([r,0,1]));
-	rayUR = rayUR.rotate(fovh/2, horzAbout);
-	rayUR = rayUR.rotate(phi, $V([0,0,1]));
-	rayUR = rayUR.translate($V([h,0,0]));
-
-	//Upper left
-	var rayUL = $L([r,0,0],[1,0,0]);
-	rayUL = rayUL.rotate(fovv/2, $V([r,0,1]));
-	rayUL = rayUL.rotate(-fovh/2, horzAbout);
-	rayUL = rayUL.rotate(phi, $V([0,0,1]));
-	rayUL = rayUL.translate($V([h,0,0]));
-
-
-	var vlr = targetv.intersectionWith(rayLR); 	
-	var vll = targetv.intersectionWith(rayLL);
-	var vur = targetv.intersectionWith(rayUR);
-	var vul = targetv.intersectionWith(rayUL);
-
-	var hlr = targeth.intersectionWith(rayLR);
-	var hll = targeth.intersectionWith(rayLL);
-	var hur = targeth.intersectionWith(rayUR);
-	var hul = targeth.intersectionWith(rayUL);
-	
-	var pvlr = this.swapYZ(vlr.elements);
-	var pvll = this.swapYZ(vll.elements);
-	var pvur = this.swapYZ(vur.elements);
-	var pvul = this.swapYZ(vul.elements);
-	
-	var phlr = this.swapYZ(hlr.elements);
-	var phll = this.swapYZ(hll.elements);
-	var phur = this.swapYZ(hur.elements);
-	var phul = this.swapYZ(hul.elements);
-	// console.log(phlr, phll, phur, phul);
-	
 	var layer1 = 1;
 	var layer2 = 2;
 	var color1 = 1;
 	var color2 = 2;
+	var entities = "";
 	var dxf = new DxfCreator();
 	var hdr = dxf.createFileHeader()
 		+ dxf.startEntitySection();
-	var entities = 
-		dxf.createLineEntity(layer1, color1, pvul, pvur) +
-		dxf.createLineEntity(layer1, color1, pvur, pvlr) +
-		dxf.createLineEntity(layer1, color1, pvlr, pvll) +
-		dxf.createLineEntity(layer1, color1, pvll, pvul) +
+	
+	var targetv = $P([d,0,0], $V([-1,0,0]));
+	var targeth = $P([d,0,0], $V([0,1,0]));
+
+	for (var i = 0, z = 0; i < maxFrames; i++, z += di){
+		//Lower right	
+		var horzAbout = $L([r,1,z],[0,1,0]);
 		
-		dxf.createLineEntity(layer2, color2, phul, phur) +
-		dxf.createLineEntity(layer2, color2, phur, phlr) +
-		dxf.createLineEntity(layer2, color2, phlr, phll) +
-		dxf.createLineEntity(layer2, color2, phll, phul);
+		var rayLR = $L([r,0,z],[1,0,0]);
+		rayLR = rayLR.rotate(-fovv/2, $V([r,0,1]));
+		rayLR = rayLR.rotate(fovh/2, horzAbout);
+		rayLR = rayLR.rotate(phi, $V([0,0,1]));
+		rayLR = rayLR.translate($V([h,0,0]));
+	
+		//Lower left
+		var rayLL = $L([r,0,z],[1,0,0]);
+		rayLL = rayLL.rotate(-fovv/2, $V([r,0,1]));
+		rayLL = rayLL.rotate(-fovh/2, horzAbout);
+		rayLL = rayLL.rotate(phi, $V([0,0,1]));
+		rayLL = rayLL.translate($V([h,0,0]));
+		
+		//Upper right
+		var rayUR = $L([r,0,z],[1,0,0]);
+		rayUR = rayUR.rotate(fovv/2, $V([r,0,1]));
+		rayUR = rayUR.rotate(fovh/2, horzAbout);
+		rayUR = rayUR.rotate(phi, $V([0,0,1]));
+		rayUR = rayUR.translate($V([h,0,0]));
+	
+		//Upper left
+		var rayUL = $L([r,0,z],[1,0,0]);
+		rayUL = rayUL.rotate(fovv/2, $V([r,0,1]));
+		rayUL = rayUL.rotate(-fovh/2, horzAbout);
+		rayUL = rayUL.rotate(phi, $V([0,0,1]));
+		rayUL = rayUL.translate($V([h,0,0]));
+
+		var vlr = targetv.intersectionWith(rayLR); 	
+		var vll = targetv.intersectionWith(rayLL);
+		var vur = targetv.intersectionWith(rayUR);
+		var vul = targetv.intersectionWith(rayUL);
+	
+		var hlr = targeth.intersectionWith(rayLR);
+		var hll = targeth.intersectionWith(rayLL);
+		var hur = targeth.intersectionWith(rayUR);
+		var hul = targeth.intersectionWith(rayUL);
+		
+		var pvlr = this.swapYZ(vlr.elements);
+		var pvll = this.swapYZ(vll.elements);
+		var pvur = this.swapYZ(vur.elements);
+		var pvul = this.swapYZ(vul.elements);
+		
+		var phlr = this.swapYZ(hlr.elements);
+		var phll = this.swapYZ(hll.elements);
+		var phur = this.swapYZ(hur.elements);
+		var phul = this.swapYZ(hul.elements);
+
+		entities += 
+			dxf.createLineEntity(layer1, color1, pvul, pvur) +
+			dxf.createLineEntity(layer1, color1, pvur, pvlr) +
+			dxf.createLineEntity(layer1, color1, pvlr, pvll) +
+			dxf.createLineEntity(layer1, color1, pvll, pvul) 
 			
+			// dxf.createLineEntity(layer2, color2, phul, phur) +
+			// dxf.createLineEntity(layer2, color2, phur, phlr) +
+			// dxf.createLineEntity(layer2, color2, phlr, phll) +
+			// dxf.createLineEntity(layer2, color2, phll, phul);
+		
+	}
+	
 	var eof = dxf.endEntitySection()
 		+ dxf.createEOF();
 	$('outputText').innerHTML = hdr + entities + eof;
