@@ -174,242 +174,25 @@ VeloCamera.prototype.captureN = function (mount, targetDistance, maxFrames){
 	var hur = targeth.intersectionWith(rayUR);
 	var hul = targeth.intersectionWith(rayUL);
 	
-	console.log(hll, hlr, hul, hur);
+	console.log(vll.elements);
+	var layer = 1;
+	var color = 10;
 	var dxf = new DxfCreator();
-	var hdr = dxf.createFileHeader();
-	$('outputText').innerHTML = hdr;
+	var hdr = dxf.createFileHeader()
+		+ dxf.startEntitySection();
+	var entities = 
+		dxf.createLineEntity(layer, color, vul.elements, vur.elements) +
+		dxf.createLineEntity(layer, color, vur.elements, vlr.elements) +
+		dxf.createLineEntity(layer, color, vlr.elements, vll.elements) +
+		dxf.createLineEntity(layer, color, vll.elements, vul.elements);	
+	var eof = dxf.endEntitySection()
+		+ dxf.createEOF();
+	$('outputText').innerHTML = hdr + entities + eof;
 	
 }
-VeloCamera.prototype.captureN0 = function (mount, targetDistance, maxFrames){
-	var topLeft = new Point();
-	var topRight = new Point();
-	var botLeft = new Point();
-	var botRight = new Point();
-	var midLeft = new Point();
-	var midRight = new Point();
-	
-	var frame = [];
-	var fov = this.calcFieldOfView();
-	var camOrigin = {
-		x : this.calcCosineAngleAdjacent(mount.angleToCamera, mount.radiusToCamera),
-		y : this.calcSineAngleOpposite(mount.angleToCamera, mount.radiusToCamera),
-		z : 0 
-	};
-	var camToTargetHorizontalDistance = targetDistance - camOrigin.x;
-	var camToTargetVerticalDistance = camOrigin.y + mount.height;
-	
-	var frameTopHeight = mount.height + camOrigin.y +
-		this.calcTangentAngleOpposite((mount.angleToCamera+fov.vertical/2),
-			camToTargetHorizontalDistance); 
-	
-	var frameBotHeight = mount.height + camOrigin.y +
-		this.calcTangentAngleOpposite((mount.angleToCamera-fov.vertical/2),
-			camToTargetHorizontalDistance);
-	
-	//if camera frame is looking horizontally wholly or partially.....	
-	var frameMidTopX;
-	if (frameTopHeight < 0){
-		frameTopHeight = (frameTopHeight < 0) ? 0 : frameTopHeight;
-		frameMidTopX = camOrigin.x +
-			this.calcTangentAngleOpposite((Math.abs(mount.angleToCamera)+fov.vertical/2),
-				camToTargetVerticalDistance);			
-	}
-	var frameMidBotX;
-	if (frameBotHeight < 0){
-		frameBotHeight = (frameBotHeight < 0) ? 0 : frameBotHeight;
-		frameMidBotX = camOrigin.x +
-			this.calcTangentAngleOpposite((90 - Math.abs(mount.angleToCamera)-fov.vertical/2),
-				camToTargetVerticalDistance);	
-	}
-	
-	
-	////////
-	//var frameLeftZ = camOrigin.z -  
-		this.calcTangentAngleOpposite(fov.vertical/2, 
-			camToTargetHorizontalDistance);
-	
-	var frameRightZ = camOrigin.z +
-		this.calcTangentAngleOpposite(fov.vertical/2, 
-			camToTargetHorizontalDistance);
 
-	if (frameTopHeight <= 0 && frameBotHeight <= 0){
-		topLeft.x = frameMidTopX;
-		topLeft.z = 0;
-		topRight.x = frameRightZ;
-		topRight.z = 0;
-		// botRight.x = 
-	}
-	else if (frameTopHeight >= 0 && frameBotHeight <=0){
-		topLeft.x = frameLeftZ;
-		topLeft.z = frameTopHeight;
-		topRight.x = frameRightZ;
-		topRight.z = frameTopHeight;
-		midRight.x = frameRightZ;
-		midRight.z = 0;
-		botRight.x = frameMidBotX;
-		botRight.z = 0;
-		botLeft.x = frameMidBotX;
-		botLeft.z = 0;
-		midLeft.x = frameLeftZ;
-		midLeft.y = 0;		
-	}
-	else if (frameTopHeight > 0 && frameBotHeight > 0){
-		topLeft.x = frameLeftZ;
-		topLeft.z = frameTopHeight;
-		topRight.x = frameRightZ;
-		topRight.z = frameTopHeight;
-		botRight.x = frameRightZ;
-		botRight.z = frameBotHeight;
-		botLeft.x = frameLeftZ;
-		botLeft.z = frameBotHeight;		
-	}
-
-	frame.push(topLeft, topRight);
-	frame.push(botRight, botLeft);
-		
-	console.log(frame);
-	
-}
 function Point (){
 	this.x = 0;
 	this.y = 0;
 	this.z = 0;
-}
-function DxfCreator() 
-{
-
-	this.createFileHeader = function(){
-		var hdr = "";
-		//Header section
-		hdr += DXF("VeloCamera");
-		hdr += SECTION();
-		hdr += HEADER();
-		hdr += ACADVER();
-		hdr += INSBASE();
-		hdr += EXTMIN(0,0);
-		hdr += EXTMAX(1000, 1000);
-		hdr += ENDSEC();
-		//Table section
-		hdr += SECTION();
-		hdr += TABLES();
-		hdr += TABLE_LTYPE();
-		hdr += TABLE_LAYER();
-		return hdr;				
-	}
-	function DXF(program){
-		var record = "999\n";
-		record += "DXF created from " + program + "\n";
-		return record;
-	}
-	function SECTION(){
-		var record = "0\n";
-		record += "SECTION\n";
-		return record;
-	}
-	function HEADER(){
-		var record = "2\n";
-		record += "HEADER\n";
-		return record;
-	}
-	function ACADVER(){
-		var record = "9\n";
-		record += "$ACADVER\n";
-		record += "1\n";
-		record += "AC1006\n";
-		return record;
-	}
-	function INSBASE(){
-		var record = "10\n";
-		record += "0.0\n";
-		record += "20\n";
-		record += "0.0\n";
-		record += "30\n";
-		record += "0.0\n";
-		return record; 
-	}
-	function EXTMIN(xmin, ymin){
-		var record = "9\n";
-		record += "$EXTMIN\n";
-		record += "10\n";
-		record += xmin + "\n";
-		record += "20\n";
-		record += ymin + "\n";
-		return record;
-	}
-	function EXTMAX(xmax, ymax){
-		var record = "9\n";
-		record += "$EXTMAX\n";
-		record += "10\n";
-		record += xmax + "\n";
-		record += "20\n";
-		record += ymax + "\n";
-		return record;
-	}
-	function ENDSEC(){
-		var record = "0\n";
-		record += "ENDSEC\n";
-		return record;
-	}
-	function TABLES(){
-		var record = "2\n";
-		record += "TABLES\n"
-		return record;
-	}
-	function TABLE_LTYPE(){
-		var record = "0\n";
-		record += "TABLE\n";
-		record += "2\n";		
-		record += "LTYPE\n";
-		record += "70\n";
-		record += "1\n";
-		record += "0\n";
-		record += "LTYPE\n";
-		record += "2\n";
-		record += "CONTINUOUS\n";
-		record += "70\n";
-		record += "64\n";
-		record += "3\n";
-		record += "Solid line\n";
-		record += "72\n";
-		record += "65\n";
-		record += "73\n";
-		record += "0\n";
-		record += "40\n";
-		record += "0.000000\n";
-		record += "0\n";
-		record += "ENDTAB\n";
-		
-		return record;
-	}
-	function TABLE_LAYER(){
-		var record = "0\n";
-		record += "TABLE\n";
-		record += "2\n";
-		record += "LAYER\n";
-		record += "70\n";
-		record += "6\n";
-		record += "0\n";
-		record += "LAYER\n";
-		record += "2\n";
-		record += "1\n";
-		record += "70\n";
-		record += "64\n";
-		record += "62\n";
-		record += "7\n";
-		record += "6\n";
-		record += "CONTINUOUS\n";
-		record += "0\n";
-		record += "LAYER\n";
-		record += "2\n";
-		record += "2\n";
-		record += "70\n";
-		record += "64\n";
-		record += "62\n";
-		record += "7\n";
-		record += "6\n";
-		record += "CONTINUOUS\n";
-		record += "0\n";
-		record += "ENDTAB\n";
-		return record;
-	}
 }
