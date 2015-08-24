@@ -9,8 +9,10 @@ function DxfCreator()
 		hdr += HEADER();
 		hdr += ACADVER();
 		hdr += INSBASE();
-		hdr += EXTMIN(0,0);
-		hdr += EXTMAX(1000, 1000);
+		hdr += EXTMIN(0.0,0.0);
+		hdr += EXTMAX(1000.0, 1000.0);
+		hdr += LINMIN();
+		hdr += LINMAX();
 		hdr += ENDSEC();
 		//Table section
 		hdr += SECTION();
@@ -52,17 +54,17 @@ function DxfCreator()
 		record += "62\n";
 		record += color + "\n";
 		record += "10\n";
-		record += point1[0] + "\n";
+		record += point1.x + "\n";
 		record += "20\n";
-		record += point1[1] + "\n";
+		record += point1.y + "\n";
 		record += "30\n";
-		record += point1[2] + "\n";
+		record += point1.z + "\n";
 		record += "11\n";
-		record += point2[0] + "\n";
+		record += point2.x + "\n";
 		record += "21\n";
-		record += point2[1] + "\n";
+		record += point2.y + "\n";
 		record += "31\n";
-		record += point2[2] + "\n";		
+		record += point2.z + "\n";		
 		return record;
 	}
 
@@ -89,7 +91,9 @@ function DxfCreator()
 		return record;
 	}
 	function INSBASE(){
-		var record = "10\n";
+		var record = "9\n";
+		record += "$INSBASE\n";
+		record += "10\n";
 		record += "0.0\n";
 		record += "20\n";
 		record += "0.0\n";
@@ -113,6 +117,24 @@ function DxfCreator()
 		record += xmax + "\n";
 		record += "20\n";
 		record += ymax + "\n";
+		return record;
+	}
+	function LINMIN(){
+		var record = "9\n";
+		record += "$LINMIN\n";
+		record += "10\n";
+		record += "0.0\n";
+		record += "20\n";
+		record += "0.0\n";
+		return record;
+	}
+	function LINMAX(){
+		var record = "9\n";
+		record += "$LINMAX\n";
+		record += "10\n";
+		record += "1000.0\n";
+		record += "20\n";
+		record += "1000.0\n";
 		return record;
 	}
 	function ENDSEC(){
@@ -199,7 +221,7 @@ function DxfCreator()
 		return record;
 	}
 	function ENTITIES(){
-		var record = "0\n";
+		var record = "2\n";
 		record += "ENTITIES\n";
 		return record;
 	}

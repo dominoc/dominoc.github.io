@@ -39,7 +39,10 @@ function init() {
 }
 function onCaptureButtonClick(evt){
 	var targetDistance = Number($('targetDistancePicker').value);
-	gCamera.captureN(Mount, targetDistance, 1);
+	var speed = 1000*Number($('speedPicker').value)/(60*60);
+	var maxFrames = Number($('maxFramesPicker').value);
+	var framesInterval = Number($('framesInterval').value);
+	gCamera.captureN(Mount, targetDistance, maxFrames, speed, framesInterval);
 }
 function onCamSensorHeightPickerChange(evt){
 	var sensorHeight = Number($('camSensorHeightPicker').value);
@@ -104,6 +107,9 @@ function VeloCamera(){
 		fov.vertical = ((180/Math.PI) * 2.0*Math.atan((this.sensorHeight)/(2.0*this.focalLength)));
 		return fov;	
 	};
+	this.swapYZ = function(point){
+		return new Point(point[0], point[2], point[1]);
+	};
 }
 VeloCamera.prototype.setFocalLength = function(focalLength){
 	this.focalLength = Number(focalLength);
@@ -114,17 +120,8 @@ VeloCamera.prototype.setSensorWidth = function(sensorWidth){
 VeloCamera.prototype.setSensorHeight = function(sensorHeight){
 	this.sensorHeight = Number(sensorHeight);
 }
-	// var A = Line.create([0,0],[1,0]);
-	// var P1 = Plane.create([5,0,0], $V([-1,0,0]));
-	
-	// var axis = $V([0,0,1]);
-	// var B = A.rotate(45*Math.PI/180, axis);
-	// // B = A.translate($V([2,0]));
-	// // B.rotate(90*Math.PI/180, axis);
-	
-	// var I = P1.intersectionWith(B);
-	// console.log(I);
-VeloCamera.prototype.captureN = function (mount, targetDistance, maxFrames){
+VeloCamera.prototype.captureN = function (mount, targetDistance, maxFrames, speed, timeInterval){
+	var di = timeInterval * speed;
 	var fovh = this.fov().horizontal * Math.PI/180;
 	var fovv = this.fov().vertical * Math.PI/180;
 	var r = mount.radiusToCamera;
@@ -133,7 +130,12 @@ VeloCamera.prototype.captureN = function (mount, targetDistance, maxFrames){
 	var d = targetDistance;
 	
 	var horzAbout = $L([r,1,0],[0,1,0]);
+	var targetv = $P([d,0,0], $V([-1,0,0]));
+	var targeth = $P([d,0,0], $V([0,1,0]));
 
+	for (var i = 0, camz = 0; i < maxFrames; i++, camz += di){
+		console.log(camz);
+	}
 	//Lower right	
 	var rayLR = $L([r,0,0],[1,0,0]);
 	rayLR = rayLR.rotate(-fovv/2, $V([r,0,1]));
@@ -162,37 +164,54 @@ VeloCamera.prototype.captureN = function (mount, targetDistance, maxFrames){
 	rayUL = rayUL.rotate(phi, $V([0,0,1]));
 	rayUL = rayUL.translate($V([h,0,0]));
 
-	var targetv = $P([d,0,0], $V([-1,0,0]));
+
 	var vlr = targetv.intersectionWith(rayLR); 	
 	var vll = targetv.intersectionWith(rayLL);
 	var vur = targetv.intersectionWith(rayUR);
 	var vul = targetv.intersectionWith(rayUL);
 
-	var targeth = $P([d,0,0], $V([0,1,0]));
 	var hlr = targeth.intersectionWith(rayLR);
 	var hll = targeth.intersectionWith(rayLL);
 	var hur = targeth.intersectionWith(rayUR);
 	var hul = targeth.intersectionWith(rayUL);
 	
-	console.log(vll.elements);
-	var layer = 1;
-	var color = 10;
+	var pvlr = this.swapYZ(vlr.elements);
+	var pvll = this.swapYZ(vll.elements);
+	var pvur = this.swapYZ(vur.elements);
+	var pvul = this.swapYZ(vul.elements);
+	
+	var phlr = this.swapYZ(hlr.elements);
+	var phll = this.swapYZ(hll.elements);
+	var phur = this.swapYZ(hur.elements);
+	var phul = this.swapYZ(hul.elements);
+	// console.log(phlr, phll, phur, phul);
+	
+	var layer1 = 1;
+	var layer2 = 2;
+	var color1 = 1;
+	var color2 = 2;
 	var dxf = new DxfCreator();
 	var hdr = dxf.createFileHeader()
 		+ dxf.startEntitySection();
 	var entities = 
-		dxf.createLineEntity(layer, color, vul.elements, vur.elements) +
-		dxf.createLineEntity(layer, color, vur.elements, vlr.elements) +
-		dxf.createLineEntity(layer, color, vlr.elements, vll.elements) +
-		dxf.createLineEntity(layer, color, vll.elements, vul.elements);	
+		dxf.createLineEntity(layer1, color1, pvul, pvur) +
+		dxf.createLineEntity(layer1, color1, pvur, pvlr) +
+		dxf.createLineEntity(layer1, color1, pvlr, pvll) +
+		dxf.createLineEntity(layer1, color1, pvll, pvul) +
+		
+		dxf.createLineEntity(layer2, color2, phul, phur) +
+		dxf.createLineEntity(layer2, color2, phur, phlr) +
+		dxf.createLineEntity(layer2, color2, phlr, phll) +
+		dxf.createLineEntity(layer2, color2, phll, phul);
+			
 	var eof = dxf.endEntitySection()
 		+ dxf.createEOF();
 	$('outputText').innerHTML = hdr + entities + eof;
 	
 }
 
-function Point (){
-	this.x = 0;
-	this.y = 0;
-	this.z = 0;
+function Point (x,y,z){
+	this.x = x;
+	this.y = y;
+	this.z = z;
 }
